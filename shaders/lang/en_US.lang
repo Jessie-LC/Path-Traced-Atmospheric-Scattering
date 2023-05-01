@@ -1,0 +1,24 @@
+option.TURPIDITY=Turbidity
+option.ENABLE_CLOUDS=Enable Clouds
+option.SUN_ANGLE=Sun Angle
+option.SUN_ROTATION=Sun Rotation
+option.SCATTERING_EVENTS=Scattering Events
+
+option.VIEW_FROM_SPACE=View From Space
+option.PROJECTION=Projection
+value.PROJECTION.0=Simple Camera
+value.PROJECTION.1=Equirectangular
+value.PROJECTION.2=Fisheye
+
+option.SHUTTER_SPEED=Shutter Speed 
+option.ISO=ISO
+option.F_STOPS=F/Stops
+option.CAMERA_RESPONSE=Camera Response
+value.CAMERA_RESPONSE.0=AGFA Color Future 100CD
+value.CAMERA_RESPONSE.1=DSCS 315
+value.CAMERA_RESPONSE.2=FP2900ZG
+value.CAMERA_RESPONSE.3=FCICD
+
+option.GROUND_ALBEDO_R=Ground Albedo R
+option.GROUND_ALBEDO_G=Ground Albedo G
+option.GROUND_ALBEDO_B=Ground Albedo B
