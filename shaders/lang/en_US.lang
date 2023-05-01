@@ -14,10 +14,11 @@ option.SHUTTER_SPEED=Shutter Speed
 option.ISO=ISO
 option.F_STOPS=F/Stops
 option.CAMERA_RESPONSE=Camera Response
-value.CAMERA_RESPONSE.0=AGFA Color Future 100CD
+value.CAMERA_RESPONSE.0=AGFAcolor Future
 value.CAMERA_RESPONSE.1=DSCS 315
 value.CAMERA_RESPONSE.2=FP2900ZG
 value.CAMERA_RESPONSE.3=FCICD
+value.CAMERA_RESPONSE.4=AGFAcolor OptimaII
 
 option.GROUND_ALBEDO_R=Ground Albedo R
 option.GROUND_ALBEDO_G=Ground Albedo G
