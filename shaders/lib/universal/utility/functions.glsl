@@ -149,6 +149,20 @@ vec4 linearstep(in vec4 x, float low, float high) {
 
 vec2 sincos(float x) { return vec2(sin(x), cos(x)); }
 
+vec2 GetEquirectangularCoord(in vec3 rayDirection) {
+    float lon = atan(rayDirection.z, rayDirection.x);
+    if(rayDirection.z < 0) {
+        lon = 2 * pi - atan(-rayDirection.z, rayDirection.x);
+    }
+
+    float lat = acos(rayDirection.y);
+
+    const vec2 rads = vec2(1.0 / (pi * 2.0), 1.0 / pi);
+    vec2 sphereCoords = vec2(lon, lat) * rads;
+
+    return sphereCoords;
+}
+
 vec2 RSI(vec3 pos, vec3 dir, float radius) {
     float radiusSquared = square(radius);
     float posDotDir = dot(pos, dir);

@@ -49,6 +49,10 @@ uniform sampler2D noisetex;
 uniform sampler1D cdfTextureRayleigh;
 uniform sampler1D phaseTextureRayleigh;
 
+uniform sampler2D earthDiffuse;
+uniform sampler2D earthSpecular;
+uniform sampler2D earthNormal;
+uniform sampler2D earthOceanDepth;
 uniform sampler2D cdfTextureAerosol;
 uniform sampler2D cdfTextureCloud;
 uniform sampler2D phaseTextureAerosol;
