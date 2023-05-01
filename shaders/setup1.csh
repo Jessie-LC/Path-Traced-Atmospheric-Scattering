@@ -3,7 +3,7 @@
 #extension GL_ARB_gpu_shader_int64 : enable
 #extension AMD_gpu_shader_int64 : enable
 
-#define CAMERA_RESPONSE 1 //[0 1 2 3]
+#define CAMERA_RESPONSE 1 //[0 1 2 3 4]
 
 layout (local_size_x = 32, local_size_y = 32) in;
 const ivec3 workGroups = ivec3(32, 32, 1);

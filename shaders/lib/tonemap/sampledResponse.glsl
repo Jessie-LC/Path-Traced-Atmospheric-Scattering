@@ -32,7 +32,16 @@
             f /= 2.5;
         #elif CAMERA_RESPONSE == 3
             f /= 6.0;
+        #elif CAMERA_RESPONSE == 4
+            f /= 12.0;
         #endif
+
+        if(isnan(f)) {
+            f = 0.0;
+        }
+        if(isinf(f)) {
+            f = 3.4e38;
+        }
 
         float upper = float(BinarySearch(component, f));
         float idx = distance(texelFetch(cameraResponseLUT, ivec2(0, 0), 0)[component], upper);

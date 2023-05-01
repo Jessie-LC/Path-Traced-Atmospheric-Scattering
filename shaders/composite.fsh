@@ -221,6 +221,13 @@ void main() {
     float atmosphere = PathtraceAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
     vec3 simulated = SpectrumToXYZExact_CIE2012(atmosphere / wavelengthPDF, wavelength) * xyzToRGBMatrix_D65;
 
+    if(any(isnan(simulated))) {
+        simulated = vec3(0.0);
+    }
+    if(any(isinf(simulated))) {
+        simulated = vec3(3.4e38);
+    }
+
     int frames = int(texture(colortex0, textureCoordinate).a);
     vec3 previousColor = texture(colortex0, textureCoordinate).rgb;
     simulationOutput.rgb = mix(previousColor, simulated, 1.0 / (++frames));
