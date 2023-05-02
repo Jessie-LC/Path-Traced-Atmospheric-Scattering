@@ -176,6 +176,57 @@ vec2 RSI(vec3 pos, vec3 dir, float radius) {
     return ret;
 }
 
+bool IntersectSphere(in vec3 rayPosition, in vec3 rayDirection, in float radius, out float dist) {
+    vec2 sphereDists = RSI(rayPosition, rayDirection, radius);
+    
+    if(sphereDists.x > 0.001) {
+        dist = sphereDists.x;
+        return true;
+    } else {
+        dist = sphereDists.y;
+        if(dist < 0.001) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+}
+
+int LinePlaneIntersection(
+    vec3 Lo, vec3 Lv,
+    vec3 Po, vec3 Pn,
+    out float t
+) {
+    float NdotV = dot(Pn, Lv);
+    float NdotO = dot(Pn, Lo - Po);
+    if (NdotV == 0.0) {
+        if (NdotO == 0.0) {
+            return 2;
+        } else {
+            return 0;
+        }
+    }
+
+    t = NdotO / -NdotV;
+
+    return 1;
+}
+
+int RayPlaneIntersection(
+    vec3 Ro, vec3 Rv,
+    vec3 Po, vec3 Pn,
+    out float t
+) {
+    int tmp = LinePlaneIntersection(Ro, Rv, Po, Pn, t);
+    if (tmp == 1 && t < 0.0) {
+        return 0;
+    }
+    
+    if (dot(Rv, Pn) > 0.0) { return 0; }
+
+    return tmp;
+}
+
 int LineSphereIntersect(
 	vec3 Lo, vec3 Lv,
 	vec3 So, float Sr,
@@ -391,3 +442,24 @@ void RGBToSpectrum(out float result, in float wl, in float r, in float g, in flo
     }
 }
 //End of Mistuba code
+
+float Air(in float wavelength) {
+    return 1.0+8.06051E-5+2.480990E-2/(132.274-pow(wavelength,-2.0))+1.74557E-4/(39.32957-pow(wavelength,-2.0));
+}
+float Water(in float wavelength) {
+    const float n1 = 1.779e-4;
+    const float n2 = -1.05e-6;
+    const float n3 = 1.6e-8;
+    const float n4 = -2.02e-6;
+    const float n5 = 15.868;
+    const float n6 = 0.01155;
+    const float n7 = -0.00423;
+    const float n8 = -4382.0;
+    const float n9 = 1.1455e6;
+    const float T = 20.0;
+    const float S = 0.0;
+    return 1.31405 + (n1 + n2 * T + n3 * pow(T, 2.0)) * S + n4 * pow(T, 2.0) + ((n5 + n6 * S + n7 * T) / wavelength) + (n8 / pow(wavelength, 2.0)) + (n9 / pow(wavelength, 3.0));
+}
+float Glass(in float wl) {
+    return sqrt(1.0+1.03961212/(1.0-0.00600069867/pow(wl,2.0))+0.231792344/(1.0-0.0200179144/pow(wl,2.0))+1.01046945/(1.0-103.560653/pow(wl,2.0)));
+}

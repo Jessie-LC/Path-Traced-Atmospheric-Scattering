@@ -37,7 +37,7 @@
 
 const float sunRadius        = 6.95e8;
 const float sunDistance      = 1.49e11;
-const float sunAngularRadius = (sunRadius / sunDistance) * 1.0;
+const float sunAngularRadius = sunRadius / sunDistance;
 
 layout(location = 0) out vec4 simulationOutput;
 
@@ -49,10 +49,6 @@ uniform sampler2D noisetex;
 uniform sampler1D cdfTextureRayleigh;
 uniform sampler1D phaseTextureRayleigh;
 
-uniform sampler2D earthDiffuse;
-uniform sampler2D earthSpecular;
-uniform sampler2D earthNormal;
-uniform sampler2D earthOceanDepth;
 uniform sampler2D cdfTextureAerosol;
 uniform sampler2D cdfTextureCloud;
 uniform sampler2D phaseTextureAerosol;
@@ -82,7 +78,7 @@ const bool colortex0Clear  = false;
 #include "/lib/atmosphere/misc.glsl"
 #include "/lib/atmosphere/pt.glsl"
 
-const float FOV = 80.0;
+const float FOV = 40.0;
 const float sensorWidth = 1e-3 * 36.0;
 const float sensorHeight = 1e-3 * 27.0;
 

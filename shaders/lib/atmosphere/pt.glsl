@@ -1,5 +1,10 @@
 #if !defined LIB_ATMOSPHERE_PATHTRACED
 #define LIB_ATMOSPHERE_PATHTRACED
+    struct VolumeGradient {
+        vec3 rayleigh;
+        vec3 mie;
+    };
+
     float SampleNullDistance(
         vec3  rayPosition,
         vec3  rayVector,
@@ -228,6 +233,19 @@
         return saturate(transmittance);
     }
 
+    float PhysicalSun(in vec3 sceneDirection, in vec3 lightDirection, in float a, in float luminance) {
+        float cosTheta = dot(sceneDirection, lightDirection);
+        float centerToEdge = clamp(acos(cosTheta) / sunAngularRadius, 0.0, 1.0);
+        float cosSunRadius = cos(sunAngularRadius);
+        if(cosTheta < cosSunRadius) return 0.0;
+
+        float mu = sqrt(1.0 - (centerToEdge*centerToEdge*centerToEdge*centerToEdge*centerToEdge));
+        float factor = pow(mu, a);
+        float finalLuminance = luminance * factor;
+
+        return finalLuminance;
+    }
+
     float PathtraceAtmosphereScattering(in vec3 viewPosition, in vec3 viewVector, in vec3 lightVector, in vec4 baseAttenuationCoefficients, in float irradiance, in float wavelength) {
         int component;
 
@@ -261,7 +279,7 @@
             vec3 oldRayDirection = normalize(rayDirection);
 
             float hitDistance;
-            bool hitAtmosphere;// = IntersectionDeltaTracking(position, rayDirection, baseAttenuationCoefficients, hitDistance, component);
+            bool hitAtmosphere;
             if(planetIntersected) {
                 hitAtmosphere = FindNextInteraction(position, rayDirection, baseAttenuationCoefficients, component, hitDistance, pid.x);
             } else {
@@ -363,6 +381,7 @@
                     }
                 }
             } else {
+                if(bounces < 1) scattering += PhysicalSun(rayDirection, sunDirection, mix(0.3, 0.7, (wavelength - 390.0) / 441.0), Plancks(5778.0, wavelength)) * throughput;
                 break;
             }
 

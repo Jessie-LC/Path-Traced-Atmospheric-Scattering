@@ -50,10 +50,6 @@
         return (0.434 * c * pi * pow(tau / (wavelength * 1e-9), junge - 2.0) * K + AverageBetaM()) / 2.0;
     }
 
-    float Air(in float wavelength) {
-        return 1.0+8.06051E-5+2.480990E-2/(132.274-pow(wavelength,-2.0))+1.74557E-4/(39.32957-pow(wavelength,-2.0));
-    }
-
     float BetaR(in float wavelength) {
         float nanometers = wavelength * 1e-9;
         float micrometers = wavelength * 1e-6;
