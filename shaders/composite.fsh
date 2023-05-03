@@ -52,8 +52,10 @@ uniform sampler1D cdfTextureRayleigh;
 uniform sampler1D phaseTextureRayleigh;
 
 uniform sampler2D cdfTextureAerosol;
+uniform sampler2D cdfTextureRainbow;
 uniform sampler2D cdfTextureCloud;
 uniform sampler2D phaseTextureAerosol;
+uniform sampler2D phaseTextureRainbow;
 uniform sampler2D phaseTextureCloud;
 
 uniform sampler3D noise3D;

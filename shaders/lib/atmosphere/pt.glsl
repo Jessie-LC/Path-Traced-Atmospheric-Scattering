@@ -1,8 +1,11 @@
 #if !defined LIB_ATMOSPHERE_PATHTRACED
 #define LIB_ATMOSPHERE_PATHTRACED
-    struct VolumeGradient {
-        vec3 rayleigh;
-        vec3 mie;
+    struct BaseAttenuationCoefficients {
+        float rayleigh;
+        float aerosol;
+        float ozone;
+        float cloud;
+        float mist;
     };
 
     float SampleNullDistance(

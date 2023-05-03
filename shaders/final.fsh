@@ -38,6 +38,7 @@ uniform sampler3D noise3D;
 uniform sampler1D phaseTextureRayleigh;
 
 uniform sampler2D phaseTextureAerosol;
+uniform sampler2D phaseTextureRainbow;
 uniform sampler2D phaseTextureCloud;
 
 uniform sampler2D cameraResponseLUT;
@@ -80,10 +81,14 @@ void main() {
             float wavelength = (float(i + 1) / 441.0) * 441.0 + 390.0;
 
             float D65Spectrum = Plancks(6504.0, wavelength);
-            if(textureCoordinate.y < 0.06 && textureCoordinate.y > 0.04) {
-                phaseXYZ += SpectrumToXYZExact_CIE2012((texture(phaseTextureAerosol, vec2(textureCoordinate.x, (wavelength - 390.0) / 441.0)).r * D65Spectrum) / (1.0 / 441.0), wavelength) / 441.0;
+
+            vec2 lookupCoord = vec2(textureCoordinate.x, (wavelength - 390.0) / 441.0);
+            if(textureCoordinate.y < 0.08 && textureCoordinate.y > 0.06) {
+                phaseXYZ += SpectrumToXYZExact_CIE2012((texture(phaseTextureAerosol, lookupCoord).r * D65Spectrum) / (1.0 / 441.0), wavelength) / 441.0;
+            } else if(textureCoordinate.y < 0.06 && textureCoordinate.y > 0.04) {
+                phaseXYZ += SpectrumToXYZExact_CIE2012((texture(phaseTextureCloud, lookupCoord).r * D65Spectrum) / (1.0 / 441.0), wavelength) / 441.0;
             } else if(textureCoordinate.y < 0.04 && textureCoordinate.y > 0.02) {
-                phaseXYZ += SpectrumToXYZExact_CIE2012((texture(phaseTextureCloud, vec2(textureCoordinate.x, (wavelength - 390.0) / 441.0)).r * D65Spectrum) / (1.0 / 441.0), wavelength) / 441.0;
+                phaseXYZ += SpectrumToXYZExact_CIE2012((texture(phaseTextureRainbow, lookupCoord).r * D65Spectrum) / (1.0 / 441.0), wavelength) / 441.0;
             } else if(textureCoordinate.y < 0.02) {
                 phaseXYZ += SpectrumToXYZExact_CIE2012((texture(phaseTextureRayleigh, textureCoordinate.x).r * D65Spectrum) / (1.0 / 441.0), wavelength) / 441.0;
             }
@@ -91,7 +96,7 @@ void main() {
             D65XYZ += SpectrumToXYZExact_CIE2012(D65Spectrum / (1.0 / 441.0), wavelength) / 441.0;
         }
         vec3 phaseRGB = (phaseXYZ * xyzToRGBMatrix_D65) / (D65XYZ * xyzToRGBMatrix_D65);
-        if(textureCoordinate.y < 0.06) {
+        if(textureCoordinate.y < 0.08) {
             color = phaseRGB * pi;
         }
     #endif
