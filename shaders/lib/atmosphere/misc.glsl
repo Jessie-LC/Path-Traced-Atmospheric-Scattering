@@ -34,7 +34,7 @@
         float mie = 0.0;
         for(int i = 0; i < 441; ++i) {
             float wavelength = (float(i + 1) / 441.0) * 441.0 + 390.0;
-            float c = (0.6544 * TURPIDITY - 0.6510) * 5e-18;
+            float c = (0.6544 * TURBIDITY - 0.6510) * 4e-18;
             float K = (0.773335 - 0.00386891 * wavelength) / (1.0 - 0.00546759 * wavelength);
             mie += (0.434 * c * pi * pow(tau / (wavelength * 1e-9), junge - 2.0) * K) / 441.0;
         }
@@ -42,13 +42,20 @@
         return mie;
     }
 
-    float BetaM(in float wavelength) {
-        const float junge = 4.0;
+    #ifdef NISHITA_MIE
+        float BetaM(in float wavelength) {
+            float B = TURBIDITY < 1.1 ? 0.0009 : 0.166 * TURBIDITY - 0.164;
+            return pow(wavelength, -1.0) * B;
+        }
+    #else
+        float BetaM(in float wavelength) {
+            const float junge = 4.0;
 
-        float c = (0.6544 * TURPIDITY - 0.6510) * 5e-18;
-        float K = (0.773335 - 0.00386891 * wavelength) / (1.0 - 0.00546759 * wavelength);
-        return (0.434 * c * pi * pow(tau / (wavelength * 1e-9), junge - 2.0) * K + AverageBetaM()) / 2.0;
-    }
+            float c = (0.6544 * TURBIDITY - 0.6510) * 4e-18;
+            float K = (0.773335 - 0.00386891 * wavelength) / (1.0 - 0.00546759 * wavelength);
+            return 0.434 * c * pi * pow(tau / (wavelength * 1e-9), junge - 2.0) * K;
+        }
+    #endif
 
     float BetaR(in float wavelength) {
         float nanometers = wavelength * 1e-9;

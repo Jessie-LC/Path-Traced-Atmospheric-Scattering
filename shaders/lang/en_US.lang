@@ -1,4 +1,5 @@
-option.TURPIDITY=Turbidity
+option.NISHITA_MIE=Use Nishita Aerosol Coefficient
+option.TURBIDITY=Turbidity
 option.ENABLE_CLOUDS=Enable Clouds
 option.SUN_ANGLE=Sun Angle
 option.SUN_ROTATION=Sun Rotation

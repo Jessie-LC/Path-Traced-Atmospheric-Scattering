@@ -2,7 +2,8 @@
 #define LIB_ATMOSPHERE_CONSTANTS
     const float kilometer = 1000.0;
     const float airNumberDensity   = 2.5035422e25;
-    const float ozoneNumberDensity = airNumberDensity * exp(-25e3 / 8e3) * (134.628/48.0) * 1e-6;
+    const float ozonePeakDensity = 4e-6;
+    const float ozoneNumberDensity = airNumberDensity * exp(-35e3 / 8e3) * (134.628/48.0) * ozonePeakDensity;
     const float planetRadius       = 6371e3;
     const float atmosphereHeight   = 110e3;
 
@@ -18,7 +19,7 @@
     const float atmosphereLowerLimitSquared = atmosphereLowerLimit*atmosphereLowerLimit;
 
     const float aerosolScatteringAlbedo = 0.98;
-    const float rainbowScatteringAlbedo = 0.99;
+    const float mistScatteringAlbedo = 0.99;
     const float cloudScatteringAlbedo = 0.99;
 
     const float cloudsAltitude = 600.0;
