@@ -77,12 +77,13 @@ const bool colortex0Clear  = false;
 #include "/lib/universal/universal.glsl"
 #include "/lib/rng/pcg.glsl"
 
+#include "/lib/space/sun.glsl"
 #include "/lib/atmosphere/phase.glsl"
 #include "/lib/atmosphere/constants.glsl"
 #include "/lib/atmosphere/misc.glsl"
 #include "/lib/atmosphere/pt.glsl"
 
-const float FOV = 40.0;
+const float FOV = 10.0;
 const float sensorWidth = 1e-3 * 36.0;
 const float sensorHeight = 1e-3 * 27.0;
 
@@ -166,8 +167,8 @@ void main() {
 
     vec3 history = vec3(0.0);
     int weight = 0;
-    for(int x = -2; x <= 2; ++x) {
-        for(int y = -2; y <= 2; ++y) {
+    for(int x = -5; x <= 5; ++x) {
+        for(int y = -5; y <= 5; ++y) {
             history += texture(colortex0, textureCoordinate + vec2(x, y) / viewResolution, 0).rgb;
         }
     }
@@ -187,6 +188,7 @@ void main() {
                  uv *= sensorSize / (2.0 * focalLength);
 
             vec3 viewDirection = normalize(vec3(uv.x, uv.y, 1.0));
+            viewDirection = Rotate(viewDirection, vec3(1.0, 0.0, 0.0), radians(-10.0));
         #elif PROJECTION == 1
             vec2 uv  = gl_FragCoord.xy * rcp(viewResolution.xy);
                  uv += aa;

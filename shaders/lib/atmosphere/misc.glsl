@@ -135,7 +135,7 @@
 
         float cloudNoise = mainNoise - 0.5 * detailNoise;
 
-        float density = saturate(1.0 * cloudNoise);
+        float density = saturate(3.0 * cloudNoise);
 
         density *= clamp(normalizeHeight * 2.0, 0.0, 1.0);
 

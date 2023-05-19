@@ -21,7 +21,7 @@
 #define ISO 100.0 //[50.0 100.0 200.0 400.0 600.0 800.0 1200.0 1600.0 2400.0 3200.0]
 #define F_STOPS 16.0 //[1.4 2.0 2.8 4.0 5.6 8.0 11.0 16.0 22.0 32.0]
 
-#define CAMERA_RESPONSE 1 //[0 1 2 3 4]
+#define CAMERA_RESPONSE 4 //[0 1 2 3 4]
 
 //#define DISPLAY_PHASE_FUNCTIONS
 
@@ -52,23 +52,16 @@ layout(location = 0) in vec2 textureCoordinate;
 
 const float K = 40.0;
 const float calibration = 2.0 * K / 100.0;
-
 float ComputeEV100() {
     return log2(square(F_STOPS) / (1.0 / SHUTTER_SPEED) * 100.0 / ISO);
 }
-
 float ComputeISO(float aperture, float shutterSpeed, float ev) {
     return (square(aperture) * 100.0) / (shutterSpeed * pow(2.0, ev));
 }
-
 float EV100ToExposure(in float EV100) {
     float maxLuminance = calibration * pow(2.0, EV100);
 
     return 1.0 / maxLuminance;
-}
-
-vec3 expose(vec3 color, float exposure) {
-	return vec3(2.0) / (vec3(1.0) + exp(-exposure * color)) - vec3(1.0);
 }
 
 void main() {

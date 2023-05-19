@@ -110,7 +110,7 @@
         }
     }
 
-    bool FindNextInteraction(vec3 position, vec3 rayDirection, in vec4 baseAttenuationCoefficients, out int component, out float volumeDistance, in float tMax) {
+    bool FindNextInteraction(in vec3 position,in  vec3 rayDirection, in vec4 baseAttenuationCoefficients, out int component, out float volumeDistance, in float tMax) {
         // Find the interaction point with the atmosphere and output the distance to said point alongside the component of the atmosphere that was interacted with
         rayDirection = normalize(rayDirection);
         vec2 aid = RSI(position, rayDirection, atmosphereRadius);
@@ -136,6 +136,13 @@
                 return false;
                 break;
             }
+
+            float baseDensity = CalculateAtmosphereDensity(length(position)).x;
+            vec3 volumeGradient = normalize(vec3(
+                CalculateAtmosphereDensity(length(position + vec3(0.01, 0.0, 0.0))).x - baseDensity,
+                CalculateAtmosphereDensity(length(position + vec3(0.0, 0.01, 0.0))).x - baseDensity,
+                CalculateAtmosphereDensity(length(position + vec3(0.0, 0.0, 0.01))).x - baseDensity
+            ));
 
             float densityRayleigh = CalculateAtmosphereDensity(length(position)).x;
             float densityMie      = CalculateAtmosphereDensity(length(position)).y;
@@ -177,7 +184,7 @@
         return false;
     }
 
-    float EstimateTransmittance(in vec3 position, vec3 rayDirection, in vec4 baseAttenuationCoefficients) {
+    float EstimateTransmittance(in vec3 position, in vec3 rayDirection, in vec4 baseAttenuationCoefficients) {
         // Estimate the atmosphere transmittance
         vec2 aid = RSI(position, rayDirection, atmosphereRadius);
         if (aid.y < 0.0) { return 0.0; }
@@ -234,19 +241,6 @@
         }
 
         return saturate(transmittance);
-    }
-
-    float PhysicalSun(in vec3 sceneDirection, in vec3 lightDirection, in float a, in float luminance) {
-        float cosTheta = dot(sceneDirection, lightDirection);
-        float centerToEdge = clamp(acos(cosTheta) / sunAngularRadius, 0.0, 1.0);
-        float cosSunRadius = cos(sunAngularRadius);
-        if(cosTheta < cosSunRadius) return 0.0;
-
-        float mu = sqrt(1.0 - (centerToEdge*centerToEdge*centerToEdge*centerToEdge*centerToEdge));
-        float factor = pow(mu, a);
-        float finalLuminance = luminance * factor;
-
-        return finalLuminance;
     }
 
     float PathtraceAtmosphereScattering(in vec3 viewPosition, in vec3 viewVector, in vec3 lightVector, in vec4 baseAttenuationCoefficients, in float irradiance, in float wavelength) {
@@ -384,7 +378,7 @@
                     }
                 }
             } else {
-                if(bounces < 1) scattering += PhysicalSun(rayDirection, sunDirection, mix(0.3, 0.7, (wavelength - 390.0) / 441.0), Plancks(5778.0, wavelength)) * throughput;
+                if(bounces < 1) scattering += PhysicalSun(rayDirection, sunDirection, wavelength, Plancks(5778.0, wavelength)) * throughput;
                 break;
             }
 
