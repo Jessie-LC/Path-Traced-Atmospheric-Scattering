@@ -65,7 +65,7 @@ float EV100ToExposure(in float EV100) {
 }
 
 void main() {
-    float exposure = EV100ToExposure(ComputeEV100()) * rcp(pi * 150000.0);
+    float exposure = EV100ToExposure(ComputeEV100()) * rcp(pi);
     vec3 color = texture(colortex0, textureCoordinate).rgb * exposure;
     #ifdef DISPLAY_PHASE_FUNCTIONS
         vec3 phaseXYZ = vec3(0.0);
