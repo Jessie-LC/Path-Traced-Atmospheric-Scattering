@@ -378,7 +378,7 @@
                     }
                 }
             } else {
-                if(bounces < 1) scattering += PhysicalSun(rayDirection, sunDirection, wavelength, Plancks(5778.0, wavelength)) * throughput;
+                if(bounces < 1) scattering += PhysicalSun(rayDirection, lightVector, wavelength, Plancks(5778.0, wavelength)) * throughput;
                 break;
             }
 
