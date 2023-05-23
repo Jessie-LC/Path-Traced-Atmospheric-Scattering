@@ -14,6 +14,7 @@ value.PROJECTION.2=Fisheye
 option.SHUTTER_SPEED=Shutter Speed 
 option.ISO=ISO
 option.F_STOPS=F/Stops
+option.FOV=Field Of View
 option.CAMERA_RESPONSE=Film Response Curve
 value.CAMERA_RESPONSE.0=AGFAcolor Future
 value.CAMERA_RESPONSE.1=DSCS 315
