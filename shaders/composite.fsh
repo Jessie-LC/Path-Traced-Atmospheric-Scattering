@@ -189,7 +189,6 @@ void main() {
                  uv *= sensorSize / (2.0 * focalLength);
 
             vec3 viewDirection = normalize(vec3(uv.x, uv.y, 1.0));
-            viewDirection = Rotate(viewDirection, vec3(1.0, 0.0, 0.0), radians(-10.0));
         #elif PROJECTION == 1
             vec2 uv  = gl_FragCoord.xy * rcp(viewResolution.xy);
                  uv += aa;
