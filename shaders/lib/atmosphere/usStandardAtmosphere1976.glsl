@@ -1,5 +1,9 @@
 #if !defined LIB_ATMOSPHERE_USSTANDARD1976
 #define LIB_ATMOSPHERE_USSTANDARD1976
+    /*
+        Read this paper to understand the following model
+        http://jimhawley.ca/downloads/Ballistics/Formulae_and_code_US_Standard_Atmosphere_1976.pdf
+    */
     struct usStandardAtmosphere1976Data {
         float altAtBotOfLayer[7];
         float altAtTopOfLayer[7];
