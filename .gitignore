@@ -5,3 +5,4 @@ shaders/textures/ignore/earthnorm.png
 shaders/textures/ignore/earthoceandepth.png
 shaders/textures/ignore/earthspec.png
 *.sqlite
+shaders/textures/ignore/earthmap4k.png

@@ -43,6 +43,8 @@ uniform sampler2D phaseTextureCloud;
 
 uniform sampler2D cameraResponseLUT;
 
+uniform sampler2D usStandardAtmosphere;
+
 layout(location = 0) in vec2 textureCoordinate;
 
 #include "/lib/universal/universal.glsl"
@@ -94,6 +96,8 @@ void main() {
         }
     #endif
     finalColor = LinearToSrgb(CameraTonemap(color, ISO));
+
+    //finalColor = texture(usStandardAtmosphere, textureCoordinate).rrr / 1.0;
 
     finalColor += Bayer64(gl_FragCoord.xy) / 64.0;
 }

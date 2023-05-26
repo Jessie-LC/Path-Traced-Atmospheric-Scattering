@@ -1,4 +1,4 @@
-option.NISHITA_MIE=Use Nishita Aerosol Coefficient
+option.EXPONENTIAL_DENSITY=Use Exponential Density Functions
 option.TURBIDITY=Turbidity
 option.ENABLE_CLOUDS=Enable Clouds
 option.SUN_ANGLE=Sun Angle

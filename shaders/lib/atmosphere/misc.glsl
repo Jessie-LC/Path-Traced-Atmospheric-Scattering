@@ -1,10 +1,19 @@
 #if !defined LIB_ATMOSPHERE_MISC
 #define LIB_ATMOSPHERE_MISC
-    float RayleighDensity(in float h) {
-        return exp(-h * inverseScaleHeights.x + scaledPlanetRadius.x);
+    float S(in float x) {
+        return 10.0 * pow(x, 3.0) - 15.0 * pow(x, 4.0) + 6.0 * pow(x, 5.0);
+    }
+    float E(in float h) {
+        return exp(-h / 40000.0) * S(min(max((h - (2000.0 + 500.0 / 2.0)) / ((2000.0 - 500.0 / 2.0) - (2000.0 + 500.0 / 2.0)), 0.0), 1.0));
+    }
+    float AerosolDensity(in float h) {
+        return ((h < 11000.0 ? exp(-h / 80000.0) : exp(-11000.0 / 80000.0) * exp(-(h - 11000.0) / 2000.0)) + E(h) * ((0.166 * TURBIDITY - 0.164) * 1000.0)) / 2.0;
     }
 
-    float AerosolDensity(in float h) {
+    float RayleighDensityExp(in float h) {
+        return exp(-h * inverseScaleHeights.x + scaledPlanetRadius.x);
+    }
+    float AerosolDensityExp(in float h) {
         return exp(-h * inverseScaleHeights.y + scaledPlanetRadius.y);
     }
 
@@ -16,12 +25,27 @@
         return (o1 + o2 + o3 + o4) / 134.628;
     }
 
-    vec3 CalculateAtmosphereDensity(in float h) {
-        vec2 rm;
-        rm.x = RayleighDensity(h);
-        rm.y = AerosolDensity(h);
+    vec2 AtmosphereTransmittanceLookupUv(float R) {
+        const float H = sqrt(atmosphereRadiusSquared - atmosphereLowerLimitSquared);
 
-        float altitudeKm = (h - planetRadius) / kilometer;
+        float rho = sqrt(max(R * R - atmosphereLowerLimitSquared, 0.0));
+
+        float uvR = AddUvMargin(rho / H, 512);
+
+        return vec2(0.0, uvR);
+    }
+
+    vec3 CalculateAtmosphereDensity(in float coreDistance) {
+        float altitudeKm = (coreDistance - planetRadius) / kilometer;
+
+        vec2 rm;
+        #ifndef EXPONENTIAL_DENSITY
+            rm.x = textureCatmullRom(usStandardAtmosphere, AtmosphereTransmittanceLookupUv(coreDistance)).r;
+            rm.y = AerosolDensity(coreDistance - planetRadius);
+        #else
+            rm.x = RayleighDensityExp(coreDistance);
+            rm.y = AerosolDensityExp(coreDistance);
+        #endif
 
         float ozone = OzoneDensity(altitudeKm);
 
@@ -42,9 +66,9 @@
         return mie;
     }
 
-    #ifdef NISHITA_MIE
+    #ifndef EXPONENTIAL_DENSITY
         float BetaM(in float wavelength) {
-            float B = TURBIDITY < 1.1 ? 0.0009 : 0.166 * TURBIDITY - 0.164;
+            float B = 0.0009;
             return pow(wavelength, -1.0) * B;
         }
     #else
@@ -59,7 +83,6 @@
 
     float BetaR(in float wavelength) {
         float nanometers = wavelength * 1e-9;
-        float micrometers = wavelength * 1e-6;
 
         float F_N2 = 1.034 + 3.17e-4 * (1.0 / pow(wavelength, 2.0));
         float F_O2 = 1.096 + 1.385e-3 * (1.0 / pow(wavelength, 2.0)) + 1.448e-4 * (1.0 / pow(wavelength, 4.0));
