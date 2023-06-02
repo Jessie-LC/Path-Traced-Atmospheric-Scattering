@@ -16,6 +16,7 @@ option.ISO=ISO
 option.F_STOPS=F/Stops
 option.FOV=Field Of View
 option.CAMERA_RESPONSE=Film Response Curve
+option.USE_SPECTRAL_CAMERA_TONEMAP=Spectral Tonemapping
 value.CAMERA_RESPONSE.0=AGFAcolor Future
 value.CAMERA_RESPONSE.1=DSCS 315
 value.CAMERA_RESPONSE.2=FP2900ZG
