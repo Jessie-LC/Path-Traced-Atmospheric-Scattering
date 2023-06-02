@@ -202,6 +202,12 @@
         float transmittance = 1.0;
         float t = 0.0;
         while (t < tMax) {
+            if (RandNextF() > transmittance) {
+                transmittance = 0.0;
+                break;
+            }
+            transmittance /= transmittance;
+
             float stepSize = SampleNullDistance(
                 position,
                 rayDirection,
