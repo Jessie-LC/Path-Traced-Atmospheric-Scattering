@@ -13,7 +13,7 @@ uniform sampler3D noise3D;
 #include "/lib/atmosphere/constants.glsl"
 #include "/lib/atmosphere/usStandardAtmosphere1976.glsl"
 
-void AtmosphereTransmittanceLookupUvReverse(vec2 coord, out float R) {
+void US_StandardAtmosphereLookupUVReverse(vec2 coord, out float R) {
 	float uvR  = RemoveUvMargin(coord.y, 512);
 
 	const float H = sqrt(atmosphereRadiusSquared - atmosphereLowerLimitSquared);
@@ -26,7 +26,7 @@ void main() {
     ivec2 fragPos = ivec2(gl_GlobalInvocationID.xy);
 
     float R;
-    AtmosphereTransmittanceLookupUvReverse(vec2(fragPos) / 512.0, R);
+    US_StandardAtmosphereLookupUVReverse(vec2(fragPos) / 512.0, R);
 
     usStandardAtmosphere1976LU us1976LU = usStandardAtmosphere1976Lookup(R - planetRadius);
     usStandardAtmosphere1976LU seaLevel = usStandardAtmosphere1976Lookup(0.0);
@@ -39,5 +39,5 @@ void main() {
         }
     }
 
-    imageStore(usStandardAtmosphere_image, fragPos, vec4(us1976LU.layerLocalDensity / seaLevel.layerLocalDensity, max(us1976LU.layerLocalPressure, 0.0), max(us1976LU.layerLocalTemp, 0.0), 0.0) );
+    imageStore(usStandardAtmosphere_image, fragPos, vec4(us1976LU.layerLocalDensity / seaLevel.layerLocalDensity, max(us1976LU.layerLocalPressure, 0.0), max(us1976LU.layerLocalTemp, 0.0), 0.0));
 }

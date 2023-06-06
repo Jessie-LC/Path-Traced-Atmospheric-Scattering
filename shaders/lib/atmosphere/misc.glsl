@@ -25,7 +25,7 @@
         return (o1 + o2 + o3 + o4) / 134.628;
     }
 
-    vec2 AtmosphereTransmittanceLookupUv(float R) {
+    vec2 US_StandardAtmosphereLookupUV(float R) {
         const float H = sqrt(atmosphereRadiusSquared - atmosphereLowerLimitSquared);
 
         float rho = sqrt(max(R * R - atmosphereLowerLimitSquared, 0.0));
@@ -40,7 +40,7 @@
 
         vec2 rm;
         #ifndef EXPONENTIAL_DENSITY
-            rm.x = textureCatmullRom(usStandardAtmosphere, AtmosphereTransmittanceLookupUv(coreDistance)).r;
+            rm.x = textureCatmullRom(usStandardAtmosphere, US_StandardAtmosphereLookupUV(coreDistance)).r;
             rm.y = AerosolDensity(coreDistance - planetRadius);
         #else
             rm.x = RayleighDensityExp(coreDistance);
@@ -50,20 +50,6 @@
         float ozone = OzoneDensity(altitudeKm);
 
         return vec3(rm, ozone);
-    }
-
-    float AverageBetaM() {
-        const float junge = 4.0;
-
-        float mie = 0.0;
-        for(int i = 0; i < 441; ++i) {
-            float wavelength = (float(i + 1) / 441.0) * 441.0 + 390.0;
-            float c = (0.6544 * TURBIDITY - 0.6510) * 4e-18;
-            float K = (0.773335 - 0.00386891 * wavelength) / (1.0 - 0.00546759 * wavelength);
-            mie += (0.434 * c * pi * pow(tau / (wavelength * 1e-9), junge - 2.0) * K) / 441.0;
-        }
-
-        return mie;
     }
 
     #ifndef EXPONENTIAL_DENSITY

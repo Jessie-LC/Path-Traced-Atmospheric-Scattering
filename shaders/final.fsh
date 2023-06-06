@@ -102,7 +102,12 @@ void main() {
     #endif
     finalColor = LinearToSrgb(CameraTonemap(color, ISO));
 
-    //finalColor = texture(usStandardAtmosphere, textureCoordinate).rrr / 1.0;
+    //{
+    //    vec3 atmosphere = textureCatmullRom(usStandardAtmosphere, textureCoordinate).xyz / vec3(1.0, 101325.0, 288.15);
+    //    finalColor  = vec3(step(abs(textureCoordinate.x - atmosphere.r), 0.002), 0.0, 0.0) * 0.5;
+    //    finalColor += vec3(0.0, step(abs(textureCoordinate.x - atmosphere.g), 0.002), 0.0) * 0.5;
+    //    finalColor += vec3(0.0, 0.0, step(abs(textureCoordinate.x - atmosphere.b), 0.002)) * 0.5;
+    //}
 
     finalColor += Bayer64(gl_FragCoord.xy) / 64.0;
 }

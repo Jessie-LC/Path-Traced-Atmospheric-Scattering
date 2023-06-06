@@ -55,9 +55,9 @@
 
         for(int i = 0; i <= 6; ++i) {
             if(us1976Data.lapseRateInLayer[i] == 0.0) {
-                us1976Data.lapseExponentInLayer[i] = -9.80665 / (rAir * us1976Data.tempAtBotOfLayer[i]);
+                us1976Data.lapseExponentInLayer[i] = -9.81 / (rAir * us1976Data.tempAtBotOfLayer[i]);
             } else {
-                us1976Data.lapseExponentInLayer[i] = -9.80665 / (rAir * us1976Data.lapseRateInLayer[i]);
+                us1976Data.lapseExponentInLayer[i] = -9.81 / (rAir * us1976Data.lapseRateInLayer[i]);
             }
 
             if(i <= 5) {
