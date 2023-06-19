@@ -40,7 +40,7 @@
 
         vec2 rm;
         #ifndef EXPONENTIAL_DENSITY
-            rm.x = textureCatmullRom(usStandardAtmosphere, US_StandardAtmosphereLookupUV(coreDistance)).r;
+            rm.x = texture(usStandardAtmosphere, US_StandardAtmosphereLookupUV(coreDistance)).r;
             rm.y = AerosolDensity(coreDistance - planetRadius);
         #else
             rm.x = RayleighDensityExp(coreDistance);
@@ -77,6 +77,14 @@
         float n = square(Air(wavelength * 1e-3)) - 1.0;
 
         return ((8.0 * pow(pi, 3.0) * pow(n, 2.0)) / (3.0 * airNumberDensity * pow(nanometers, 4.0))) * kingFactor;
+    }
+
+    float BetaR_Arbitrary(in float wavelength) {
+        vec3 color = vec3(0.1, 0.5, 1.0);
+
+        float spectrum;
+        RGBToSpectrum(spectrum, wavelength, color.r, color.g, color.b, 0);
+        return spectrum;
     }
 
     float BetaO(float wavelength) {

@@ -1,4 +1,12 @@
 option.EXPONENTIAL_DENSITY=Use Exponential Density Functions
+option.PHASE_FUNCTION_RAYLEIGH=Phase Function Rayleigh
+value.PHASE_FUNCTION_RAYLEIGH.0=Rayleigh
+value.PHASE_FUNCTION_RAYLEIGH.1=Isotropic
+option.PHASE_FUNCTION_AEROSOL=Phase Function Aerosol
+value.PHASE_FUNCTION_AEROSOL.0=Exact
+value.PHASE_FUNCTION_AEROSOL.1=Henyey Greenstein
+value.PHASE_FUNCTION_AEROSOL.2=Klein Nishina
+
 option.TURBIDITY=Turbidity
 option.ENABLE_CLOUDS=Enable Clouds
 option.SUN_ANGLE=Sun Angle

@@ -49,7 +49,7 @@
 
         return false;
     }
-    float TransmittanceDeltaTracking(in vec3 position, in vec3 direction, in vec3 baseAttenuationCoefficients) {
+    float TransmittanceRatioTracking(in vec3 position, in vec3 direction, in vec3 baseAttenuationCoefficients) {
         vec2 aid = RSI(position, direction, atmosphereRadius);
         if (aid.y < 0.0) { return 0.0; }
         vec2 pid = RSI(position, direction, atmosphereLowerLimit);
@@ -157,7 +157,7 @@
                         }
                     }
 
-                    float transmittance = TransmittanceDeltaTracking(position, sunDirection, baseAttenuationCoefficients.xyz);
+                    float transmittance = TransmittanceRatioTracking(position, sunDirection, baseAttenuationCoefficients.xyz);
 
                     scattering += throughput * phase * irradiance * transmittance;
 

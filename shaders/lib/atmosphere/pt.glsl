@@ -137,13 +137,6 @@
                 break;
             }
 
-            float baseDensity = CalculateAtmosphereDensity(length(position)).x;
-            vec3 volumeGradient = normalize(vec3(
-                CalculateAtmosphereDensity(length(position + vec3(0.01, 0.0, 0.0))).x - baseDensity,
-                CalculateAtmosphereDensity(length(position + vec3(0.0, 0.01, 0.0))).x - baseDensity,
-                CalculateAtmosphereDensity(length(position + vec3(0.0, 0.0, 0.01))).x - baseDensity
-            ));
-
             float densityRayleigh = CalculateAtmosphereDensity(length(position)).x;
             float densityMie      = CalculateAtmosphereDensity(length(position)).y;
             float densityOzo      = CalculateAtmosphereDensity(length(position)).z;
@@ -316,11 +309,21 @@
                     float phase = 1.0;
                     switch (component) {
                         case 0: {
-                            phase = RayleighPhase(dot(rayDirection, sunDirection));
+                            #if PHASE_FUNCTION_RAYLEIGH == 0
+                                phase = RayleighPhase(dot(rayDirection, sunDirection), wavelength);
+                            #elif PHASE_FUNCTION_RAYLEIGH == 1
+                                phase = 0.25 / pi;
+                            #endif
                             break;
                         }
                         case 1: {
-                            phase = AerosolPhase(dot(rayDirection, sunDirection), wavelength);
+                            #if PHASE_FUNCTION_AEROSOL == 0
+                                phase = AerosolPhase(dot(rayDirection, sunDirection), wavelength);
+                            #elif PHASE_FUNCTION_AEROSOL == 1
+                                phase = HenyeyGreensteinPhase(dot(rayDirection, sunDirection), aerosol_g);
+                            #elif PHASE_FUNCTION_AEROSOL == 2
+                                phase = KleinNishinaPhase(dot(rayDirection, sunDirection), aerosol_g);
+                            #endif
                             break;
                         }
                         case 2: {
@@ -339,15 +342,31 @@
 
                     switch (component) {
                         case 0: {
-                            rayDirection = Rotate(SampleRayleighPhase(), vec3(0.0, 0.0, 1.0), rayDirection);
-                            throughput *= RayleighPhase(dot(oldRayDirection, rayDirection)) /
-                                          RayleighPhase(dot(oldRayDirection, rayDirection));
+                            #if PHASE_FUNCTION_RAYLEIGH == 0
+                                rayDirection = Rotate(SampleRayleighPhase(wavelength), vec3(0.0, 0.0, 1.0), rayDirection);
+                                throughput *= RayleighPhase(dot(oldRayDirection, rayDirection), wavelength) /
+                                              RayleighPhase(dot(oldRayDirection, rayDirection), wavelength);
+                            #elif PHASE_FUNCTION_RAYLEIGH == 1
+                                rayDirection = Rotate(GenerateUnitVector(RandNext2F()), vec3(0.0, 0.0, 1.0), rayDirection);
+                                throughput *= (0.25 / pi) /
+                                              (0.25 / pi);
+                            #endif
                             break; 
                         }
                         case 1: {
-                            rayDirection = Rotate(SampleAerosolPhase(wavelength), vec3(0.0, 0.0, 1.0), rayDirection);
-                            throughput *= AerosolPhase(dot(oldRayDirection, rayDirection), wavelength) / 
-                                          AerosolPhase(dot(oldRayDirection, rayDirection), wavelength);
+                            #if PHASE_FUNCTION_AEROSOL == 0
+                                rayDirection = Rotate(SampleAerosolPhase(wavelength), vec3(0.0, 0.0, 1.0), rayDirection);
+                                throughput *= AerosolPhase(dot(oldRayDirection, rayDirection), wavelength) /
+                                              AerosolPhase(dot(oldRayDirection, rayDirection), wavelength);
+                            #elif PHASE_FUNCTION_AEROSOL == 1
+                                rayDirection = Rotate(SampleHenyeyGreensteinPhase(RandNextF(), aerosol_g), vec3(0.0, 0.0, 1.0), rayDirection);
+                                throughput *= HenyeyGreensteinPhase(dot(oldRayDirection, rayDirection), aerosol_g) /
+                                              HenyeyGreensteinPhase(dot(oldRayDirection, rayDirection), aerosol_g);
+                            #elif PHASE_FUNCTION_AEROSOL == 2
+                                rayDirection = Rotate(SampleKleinNishinaPhase(aerosol_g), vec3(0.0, 0.0, 1.0), rayDirection);
+                                throughput *= KleinNishinaPhase(dot(oldRayDirection, rayDirection), aerosol_g) /
+                                              KleinNishinaPhase(dot(oldRayDirection, rayDirection), aerosol_g);
+                            #endif
                             break; 
                         }
                         case 2: { 
