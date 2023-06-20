@@ -9,9 +9,17 @@ value.PHASE_FUNCTION_AEROSOL.2=Klein Nishina
 
 option.TURBIDITY=Turbidity
 option.ENABLE_CLOUDS=Enable Clouds
-option.SUN_ANGLE=Sun Angle
-option.SUN_ROTATION=Sun Rotation
 option.SCATTERING_EVENTS=Scattering Events
+option.USER_DEFINED_COEFFICIENTS=User Defined Coefficients
+option.RAYLEIGH_COLOR_R=Rayleigh R
+option.RAYLEIGH_COLOR_G=Rayleigh G
+option.RAYLEIGH_COLOR_B=Rayleigh B
+option.AEROSOL_COLOR_R=Aerosol R
+option.AEROSOL_COLOR_G=Aerosol G
+option.AEROSOL_COLOR_B=Aerosol B
+option.OZONE_COLOR_R=Ozone R
+option.OZONE_COLOR_G=Ozone G
+option.OZONE_COLOR_B=Ozone B
 
 option.VIEW_FROM_SPACE=View From Space
 option.PROJECTION=Projection
@@ -34,3 +42,6 @@ value.CAMERA_RESPONSE.4=AGFAcolor OptimaII
 option.GROUND_ALBEDO_R=Ground Albedo R
 option.GROUND_ALBEDO_G=Ground Albedo G
 option.GROUND_ALBEDO_B=Ground Albedo B
+
+option.SUN_ANGLE=Sun Angle
+option.SUN_ROTATION=Sun Rotation

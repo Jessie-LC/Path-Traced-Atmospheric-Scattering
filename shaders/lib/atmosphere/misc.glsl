@@ -79,19 +79,35 @@
         return ((8.0 * pow(pi, 3.0) * pow(n, 2.0)) / (3.0 * airNumberDensity * pow(nanometers, 4.0))) * kingFactor;
     }
 
-    float BetaR_Arbitrary(in float wavelength) {
-        vec3 color = vec3(0.1, 0.5, 1.0);
-
-        float spectrum;
-        RGBToSpectrum(spectrum, wavelength, color.r, color.g, color.b, 0);
-        return spectrum;
-    }
-
     float BetaO(float wavelength) {
         if(wavelength < 390.0 || wavelength > 830.0) return 0.0;
 
         return 0.0001 * ozoneNumberDensity * ozoneCrossSection[int(wavelength - 390.0)];
     }
+
+    #ifdef USER_DEFINED_COEFFICIENTS
+        float BetaM_Arbitrary(in float wavelength) {
+            vec3 color = vec3(AEROSOL_COLOR_R, AEROSOL_COLOR_G, AEROSOL_COLOR_B) / 255.0;
+
+            float spectrum;
+            RGBToSpectrum(spectrum, wavelength, color.r, color.g, color.b, 0);
+            return spectrum * 3e-6;
+        }
+        float BetaR_Arbitrary(in float wavelength) {
+            vec3 color = vec3(RAYLEIGH_COLOR_R, RAYLEIGH_COLOR_G, RAYLEIGH_COLOR_B) / 255.0;
+
+            float spectrum;
+            RGBToSpectrum(spectrum, wavelength, color.r, color.g, color.b, 0);
+            return spectrum * 3e-5;
+        }
+        float BetaO_Arbitrary(in float wavelength) {
+            vec3 color = vec3(OZONE_COLOR_R, OZONE_COLOR_G, OZONE_COLOR_B) / 255.0;
+
+            float spectrum;
+            RGBToSpectrum(spectrum, wavelength, color.r, color.g, color.b, 0);
+            return 5e-21 * spectrum * ozoneNumberDensity * 0.0001;
+        }
+    #endif
 
     vec4 GetNoise(sampler3D noiseSampler, vec3 position) {
         return texture(noiseSampler, fract(position));
