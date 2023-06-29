@@ -236,11 +236,11 @@ void main() {
     #endif
 
     #ifdef USER_DEFINED_COEFFICIENTS
-        float mieCoefficient = BetaM_Arbitrary(wavelength);
+        float mieCoefficient = BetaM_Arbitrary(wavelength) / aerosolScatteringAlbedo;
         float ozoneCoefficient = BetaO_Arbitrary(wavelength);
         float rayleighCoefficient = BetaR_Arbitrary(wavelength);
     #else
-        float mieCoefficient = BetaM(wavelength);
+        float mieCoefficient = BetaM(wavelength) / aerosolScatteringAlbedo;
         float ozoneCoefficient = BetaO(wavelength);
         float rayleighCoefficient = BetaR(wavelength);
     #endif

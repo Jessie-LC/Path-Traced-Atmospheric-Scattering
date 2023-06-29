@@ -245,7 +245,7 @@
     float PathtraceAtmosphereScattering(in vec3 viewPosition, in vec3 viewVector, in vec3 lightVector, in vec4 baseAttenuationCoefficients, in float irradiance, in float wavelength) {
         int component;
 
-        float scattering = 0.0;
+        float estimate = 0.0;
 
         vec3 groundAlbedoRGB = SrgbToLinear(vec3(GROUND_ALBEDO_R,GROUND_ALBEDO_G,GROUND_ALBEDO_B) / 255.0);
 
@@ -338,7 +338,7 @@
 
                     float transmittance = EstimateTransmittance(position, sunDirection, baseAttenuationCoefficients);
 
-                    scattering += throughput * phase * irradiance * transmittance;
+                    estimate += throughput * phase * irradiance * transmittance;
 
                     switch (component) {
                         case 0: {
@@ -391,7 +391,7 @@
 
                     float bsdf = groundAlbedo * saturate(dot(sunDirection, normal)) / pi;
 
-                    scattering += throughput * bsdf * irradiance * transmittance;
+                    estimate += throughput * bsdf * irradiance * transmittance;
                 }
 
                 {
@@ -403,16 +403,16 @@
                     }
                 }
             } else {
-                if(bounces < 1) scattering += PhysicalSun(rayDirection, lightVector, wavelength, Plancks(5778.0, wavelength)) * throughput;
+                if(bounces < 1) estimate += PhysicalSun(rayDirection, lightVector, wavelength, Plancks(5778.0, wavelength)) * throughput;
                 break;
             }
 
             ++bounces;
         }
 
-        if(isinf(scattering)) scattering = 1.0;
-        if(isnan(scattering)) scattering = 0.0;
+        if(isinf(estimate)) estimate = 1.0;
+        if(isnan(estimate)) estimate = 0.0;
 
-        return scattering;
+        return estimate;
     }
 #endif
