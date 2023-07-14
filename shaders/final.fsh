@@ -103,4 +103,6 @@ void main() {
     finalColor = LinearToSrgb(CameraTonemap(color, ISO));
 
     finalColor += Bayer64(gl_FragCoord.xy) / 64.0;
+
+    //finalColor = texture(usStandardAtmosphere, textureCoordinate).ggg / 101325.0;
 }

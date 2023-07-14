@@ -347,6 +347,10 @@ float Plancks(float t, float lambda) {
     return p1 / p2;
 }
 
+float NormalDistribution(in float x, in float mean, in float standardDeviation) {
+    return (1.0 / (standardDeviation * sqrt(2.0 * pi))) * exp(-0.5 * square((x - mean) / standardDeviation));
+}
+
 uniform sampler2D CIELUT;
 uniform sampler2D colorToSpectrumLUT;
 
@@ -523,4 +527,70 @@ float Water(in float wavelength) {
 }
 float Glass(in float wl) {
     return sqrt(1.0+1.03961212/(1.0-0.00600069867/pow(wl,2.0))+0.231792344/(1.0-0.0200179144/pow(wl,2.0))+1.01046945/(1.0-103.560653/pow(wl,2.0)));
+}
+
+//From: https://github.com/polyanskiy/refractiveindex.info-scripts/blob/master/scripts/Ciddor%201996%20-%20air.py
+float Z(in float T, in float p, in float xw) {
+    const float a0 = 1.58123e-6;
+    const float a1 = -2.9331e-8;
+    const float a2 = 1.1043e-10;
+    const float b0 = 5.707e-6;
+    const float b1 = -2.051e-8;
+    const float c0 = 1.9898e-4;
+    const float c1 = -2.376e-6;
+    const float d  = 1.83e-11;
+    const float e  = -0.765e-8;
+    return 1.0 - (p / T) * (a0 + a1 * T + a2 * pow(T, 2.0) + (b0 + b1 * T) * xw + (c0 + c1 * T) * pow(xw, 2.0)) + pow(p / T, 2.0) * (d + e * pow(xw, 2.0));
+}
+//From: https://github.com/polyanskiy/refractiveindex.info-scripts/blob/master/scripts/Ciddor%201996%20-%20air.py
+float AirN(in float lambda, in float T, in float p, in float h) {
+    const float xc = 280.0;
+    const float R = 8.314510;
+    const float k0 = 238.0185;
+    const float k1 = 5792105.0;
+    const float k2 = 57.362;
+    const float k3 = 167917.0;
+    const float w0 = 295.235;
+    const float w1 = 2.6422;
+    const float w2 = -0.032380;
+    const float w3 = 0.004028;
+    const float A = 1.2378847e-5;
+    const float B = -1.9121316e-2;
+    const float C = 33.93711047;
+    const float D = 6.3431645e3;
+    const float alpha = 1.00062;
+    const float beta = 3.14e-8;
+    const float gamma = 5.6e-7;
+
+    float sigma = 1.0 / lambda;
+    float sigma2 = pow(sigma, 2.0);
+
+    float svp = 0.0;
+    if(T - 273.15 >= 0.0) {
+        svp = exp(A * pow(T, 2.0) + B * T + C + D / T);
+    } else {
+        svp = pow(10.0, -2663.5 / T + 12.537);
+    }
+    
+    float f = alpha + beta * p + gamma * pow(T - 273.15, 2.0);
+    
+    float xw = f * h * svp / p;
+
+    float nas = 1.0 + (k1 / (k0 - sigma2) + k3 / (k2 - sigma2)) * 1e-8;
+    float naxs = 1.0 + (nas - 1.0) * (1.0 + 0.534e-6 * (xc - 450.0));
+    float nws = 1.0 + 1.022 * (w0 + w1 * sigma2 + w2 * pow(sigma, 4.0) + w3 * pow(sigma, 6.0)) * 1e-8;
+
+    float Ma = 1e-3 * (28.9635 + 12.011e-6 * (xc - 400.0));
+    float Mw = 0.018015;
+
+    float Za = Z(288.15, 101325.0, 0.0);
+    float Zw = Z(293.15, 1333.0, 1.0);
+
+    float paxs = 101325.0 * Ma / (Za * R * 288.15);
+    float pws = 1333.0 * Mw / (Zw * R * 293.15);
+
+    float pa = p * Ma / (Z(T, p, xw) * R * T) * (1.0 - xw);
+    float pw = p * Mw / (Z(T, p, xw) * R * T) * xw;
+
+    return 1.0 + (pa / paxs) * (naxs - 1.0) + (pw / pws) * (nws - 1.0);
 }

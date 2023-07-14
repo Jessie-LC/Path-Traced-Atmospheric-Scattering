@@ -10,6 +10,7 @@
     const vec2 scaleHeights = vec2(8.0, 1.2) * kilometer;
 
     const float aerosol_g = 0.76;
+    const float meanAerosolParticleDiameter = 0.8;
 
     const vec2 inverseScaleHeights   = 1.0 / (scaleHeights);
     const vec2 scaledPlanetRadius    = planetRadius * inverseScaleHeights;

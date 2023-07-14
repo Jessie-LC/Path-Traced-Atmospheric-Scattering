@@ -15,17 +15,17 @@ vec4 QuaternionMultiply(vec4 a, vec4 b) {
     );
 }
 
-vec3 Rotate(vec3 pos, vec3 axis, float angle) {
+vec3 Rotate(vec3 vec, vec3 axis, float angle) {
     vec4 q = vec4(sin(angle / 2.0) * axis, cos(angle / 2.0));
     vec4 qInv = vec4(-q.xyz, q.w);
-    return QuaternionMultiply(QuaternionMultiply(q, vec4(pos, 0)), qInv).xyz;
+    return QuaternionMultiply(QuaternionMultiply(q, vec4(vec, 0)), qInv).xyz;
 }
 
-vec3 Rotate(vec3 pos, vec3 from, vec3 to) {
+vec3 Rotate(vec3 vec, vec3 from, vec3 to) {
     vec3 halfway = normalize(from + to);
     vec4 quat = vec4(cross(from, halfway), dot(from, halfway));
     vec4 qInv = vec4(-quat.xyz, quat.w);
-    return QuaternionMultiply(QuaternionMultiply(quat, vec4(pos, 0)), qInv).xyz;
+    return QuaternionMultiply(QuaternionMultiply(quat, vec4(vec, 0)), qInv).xyz;
 }
 
 mat3 GetRotationMatrix(vec3 from, vec3 to) {

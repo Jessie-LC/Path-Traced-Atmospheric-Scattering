@@ -323,6 +323,8 @@
                                 phase = HenyeyGreensteinPhase(dot(rayDirection, sunDirection), aerosol_g);
                             #elif PHASE_FUNCTION_AEROSOL == 2
                                 phase = KleinNishinaPhase(dot(rayDirection, sunDirection), aerosol_g);
+                            #elif PHASE_FUNCTION_AEROSOL == 3
+                                phase = ApproximateMiePhase(dot(rayDirection, sunDirection), meanAerosolParticleDiameter);
                             #endif
                             break;
                         }
@@ -366,6 +368,10 @@
                                 rayDirection = Rotate(SampleKleinNishinaPhase(aerosol_g), vec3(0.0, 0.0, 1.0), rayDirection);
                                 throughput *= KleinNishinaPhase(dot(oldRayDirection, rayDirection), aerosol_g) /
                                               KleinNishinaPhase(dot(oldRayDirection, rayDirection), aerosol_g);
+                            #elif PHASE_FUNCTION_AEROSOL == 3
+                                rayDirection = Rotate(SampleApproximateMiePhase(meanAerosolParticleDiameter), vec3(0.0, 0.0, 1.0), rayDirection);
+                                throughput *= ApproximateMiePhase(dot(oldRayDirection, rayDirection), meanAerosolParticleDiameter) /
+                                              ApproximateMiePhase(dot(oldRayDirection, rayDirection), meanAerosolParticleDiameter);
                             #endif
                             break; 
                         }

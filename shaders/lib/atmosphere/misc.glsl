@@ -34,13 +34,16 @@
 
         return vec2(0.0, uvR);
     }
+    vec3 GetUS_STandardAtmosphereLUT(in float coreDistance) {
+        return texture(usStandardAtmosphere, US_StandardAtmosphereLookupUV(coreDistance)).rgb;
+    }
 
     vec3 CalculateAtmosphereDensity(in float coreDistance) {
         float altitudeKm = (coreDistance - planetRadius) / kilometer;
 
         vec2 rm;
         #ifndef EXPONENTIAL_DENSITY
-            rm.x = texture(usStandardAtmosphere, US_StandardAtmosphereLookupUV(coreDistance)).r;
+            rm.x = GetUS_STandardAtmosphereLUT(coreDistance).r;
             rm.y = AerosolDensity(coreDistance - planetRadius);
         #else
             rm.x = RayleighDensityExp(coreDistance);
@@ -83,6 +86,22 @@
         if(wavelength < 390.0 || wavelength > 830.0) return 0.0;
 
         return 0.0001 * ozoneNumberDensity * ozoneCrossSection[int(wavelength - 390.0)];
+    }
+
+    float PreethamBetaO(in float wavelength) {
+        wavelength = wavelength - 390.0;
+        float p1 = NormalDistribution(wavelength, 202.0, 15.0) * 14.4;
+        float p2 = NormalDistribution(wavelength, 170.0, 10.0) * 6.5;
+        float p3 = NormalDistribution(wavelength, 50.0, 20.0) * 3.0;
+        float p4 = NormalDistribution(wavelength, 100.0, 25.0) * 7.0;
+        float p5 = NormalDistribution(wavelength, 140.0, 30.0) * 20.0;
+        float p6 = NormalDistribution(wavelength, 150.0, 10.0) * 3.0;
+        float p7 = NormalDistribution(wavelength, 290.0, 30.0) * 12.0;
+        float p8 = NormalDistribution(wavelength, 330.0, 80.0) * 10.0;
+        float p9 = NormalDistribution(wavelength, 240.0, 20.0) * 13.0;
+        float p10 = NormalDistribution(wavelength, 220.0, 10.0) * 2.0;
+        float p11 = NormalDistribution(wavelength, 186.0, 8.0) * 1.3;
+        return 0.0001 * ozoneNumberDensity * ((p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10 + p11) / 1e20);
     }
 
     #ifdef USER_DEFINED_COEFFICIENTS
