@@ -36,7 +36,7 @@ uniform sampler2D colortex0;
 
 uniform sampler3D noise3D;
 
-uniform sampler1D phaseTextureRayleigh;
+uniform sampler2D phaseTextureRayleigh;
 
 uniform sampler2D phaseTextureAerosol;
 uniform sampler2D phaseTextureRainbow;
@@ -90,7 +90,7 @@ void main() {
             } else if(textureCoordinate.y < 0.04 && textureCoordinate.y > 0.02) {
                 phaseXYZ += SpectrumToXYZExact_CIE2012((texture(phaseTextureRainbow, lookupCoord).r * D65Spectrum) / (1.0 / 441.0), wavelength) / 441.0;
             } else if(textureCoordinate.y < 0.02) {
-                phaseXYZ += SpectrumToXYZExact_CIE2012((texture(phaseTextureRayleigh, textureCoordinate.x).r * D65Spectrum) / (1.0 / 441.0), wavelength) / 441.0;
+                phaseXYZ += SpectrumToXYZExact_CIE2012((texture(phaseTextureRayleigh, lookupCoord).r * D65Spectrum) / (1.0 / 441.0), wavelength) / 441.0;
             }
 
             D65XYZ += SpectrumToXYZExact_CIE2012(D65Spectrum / (1.0 / 441.0), wavelength) / 441.0;

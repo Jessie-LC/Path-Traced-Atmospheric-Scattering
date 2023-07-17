@@ -11,6 +11,7 @@ value.PHASE_FUNCTION_AEROSOL.3=Henyey Greenstein + Draine
 option.TURBIDITY=Turbidity
 option.ENABLE_CLOUDS=Enable Clouds
 option.SCATTERING_EVENTS=Scattering Events
+option.PREETHAM_OZONE=Use Preetham Ozone
 option.USER_DEFINED_COEFFICIENTS=User Defined Coefficients
 option.RAYLEIGH_COLOR_R=Rayleigh R
 option.RAYLEIGH_COLOR_G=Rayleigh G
