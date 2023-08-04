@@ -156,12 +156,15 @@
 
     float CalculateCloudShape(in vec3 position) {
         if(length(position) - planetRadius > cloudsMaxAltitude || length(position) - planetRadius < cloudsAltitude) return 0.0;
-        vec3 cloudPosition = position / (cloudsThickness*32.0);
+
+        position += vec3(1500.0, 0.0, 0.0);
+
+        vec3 cloudPosition = position / (cloudsThickness*512.0);
 
         float coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.1).r;
-              coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.2).r * 0.8 + coverageNoise;
+              coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.3).r * 0.8 + coverageNoise;
               coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.4).r * 0.6 + coverageNoise;
-              coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.8).r * 0.4 + coverageNoise;
+              coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.5).r * 0.4 + coverageNoise;
 
         float localizedCoverage = coverageNoise * 3.0 - 2.0;
         float coverage = globalCoverage * localizedCoverage;
@@ -178,23 +181,19 @@
 
         float mainNoise  = shapeNoise * 0.5;
               mainNoise -= coverage;
-              mainNoise += heightAlteration * 1.1;
+              mainNoise += heightAlteration * 1.3;
 
         float detailNoise  = GetNoise(noise3D, cloudPosition * pi).g * 0.8;
               detailNoise += GetNoise(noise3D, cloudPosition * pi * pi).g * 0.7;
               detailNoise += GetNoise(noise3D, cloudPosition * pi * pi * pi).g * 0.6;
               detailNoise += GetNoise(noise3D, cloudPosition * pi * pi * pi * pi).g * 0.5;
 
-        float cloudNoise = mainNoise - 0.5 * detailNoise;
+        float cloudNoise = mainNoise - 0.4 * detailNoise;
 
         float density = saturate(3.0 * cloudNoise);
 
-        density *= clamp(normalizeHeight * 2.0, 0.0, 1.0);
+        density *= clamp(normalizeHeight * 2.0, 0.0, 5.0);
 
-        if(density < 0.01) {
-            return 0.0;
-        }
-
-        return 1.0 - pow(1.0 - density, 8.0);
+        return 1.0 - pow(1.0 - density, 2.0);
     }
 #endif

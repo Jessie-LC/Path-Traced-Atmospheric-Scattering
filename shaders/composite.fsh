@@ -249,7 +249,7 @@ void main() {
         #endif
         float rayleighCoefficient = BetaR(wavelength);
     #endif
-    float cloudCoefficient = cloudAbsorption[int(wavelength - 390)];
+    float cloudCoefficient = cloudAbsorption[int(wavelength - 390)] * 2.0;
     #ifndef ENABLE_CLOUDS
         cloudCoefficient = 0.0;
     #endif

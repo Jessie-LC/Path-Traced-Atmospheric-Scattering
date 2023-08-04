@@ -23,10 +23,10 @@
     const float mistScatteringAlbedo = 0.99;
     const float cloudScatteringAlbedo = 0.99;
 
-    const float cloudsAltitude = 600.0;
-    const float cloudsThickness = cloudsAltitude * 0.1;
+    const float cloudsAltitude = 1400.0;
+    const float cloudsThickness = cloudsAltitude * 0.01;
     const float cloudsMaxAltitude = cloudsAltitude + cloudsThickness;
-    const float globalCoverage = 0.8;
+    const float globalCoverage = 0.5;
     const float cloudAnvilAmount = 0.0;
 
     const float rAir = 287.053;

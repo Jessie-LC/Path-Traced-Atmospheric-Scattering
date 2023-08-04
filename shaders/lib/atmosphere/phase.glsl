@@ -88,6 +88,16 @@
         return texture(phaseTextureRayleigh, vec2(acos(cosTheta) / pi, (wavelength - 390.0) / 441.0)).r;
     }
 
+    //Approximations
+    float ApproximateRayleighPhase(in float cosTheta, in float wavelength) {
+        return ((1.0 + square(cosTheta)) / (2.0 * 2.0 * square(1.0))) * pow(2.0 * pi / wavelength, 4.0) * square((square(Air(wavelength * 1e-3)) - 1.0) / (square(Air(wavelength * 1e-3)) + 2.0)) * pow(5.0 / 2.0, 6.0);
+    }
+	vec3 SampleSimpleRayleighPhase() {	
+        float t0 = pow(sqrt((RandNextF() * RandNextF() - RandNextF()) * 16.0 + 5.0) + 4.0 * RandNextF() - 2.0, 1.0/3.0);
+		float cosTheta = t0 - 1.0 / t0;
+		return GenerateUnitVector(vec2(RandNextF(), cosTheta * 0.5 + 0.5));
+	}
+
     float HenyeyGreensteinPhase(float cosTheta, float g) {
         const float norm = 0.25/pi;
 
