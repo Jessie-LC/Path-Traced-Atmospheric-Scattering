@@ -5,7 +5,7 @@
               rayLength = sqrt(rayLength * rayLength + square(atmosphereRadius) - dot(position, position)) - rayLength;
         float stepSize  = rayLength / float(64);
         vec3  increment = rayVector * stepSize;
-        position += increment * RandNextF();
+        position += increment * 0.5;
 
         vec3 thickness = vec3(0.0);
         for(int i = 0; i < 64; ++i, position += increment) {
@@ -34,9 +34,9 @@
 
         vec2 sd = vec2((planetIntersected && planetDists.x < 0.0) ? planetDists.y : max(atmosphereDists.x, 0.0), (planetIntersected && planetDists.x > 0.0) ? planetDists.x : atmosphereDists.y);
 
-        float stepSize = length(sd.y - sd.x) / float(64);
+        float stepSize = length(sd.y - sd.x) / float(128);
         vec3 increment = viewVector * stepSize;
-        vec3 position = viewVector * sd.x + (increment * RandNextF() + viewPosition);
+        vec3 position = viewVector * sd.x + (increment * 0.5 + viewPosition);
 
         vec3 scatteringCoefficients = vec3(baseAttenuationCoefficients.x, baseAttenuationCoefficients.y * aerosolScatteringAlbedo, 0.0);
 
@@ -59,7 +59,7 @@
 
         float scattering = 0.0;
         float transmittance = 1.0;
-        for(int i = 0; i < 64; ++i, position += increment) {
+        for(int i = 0; i < 128; ++i, position += increment) {
             vec3 density = CalculateAtmosphereDensity(length(position));
             if(density.x > 1e35) break;
             if(density.y > 1e35) break;

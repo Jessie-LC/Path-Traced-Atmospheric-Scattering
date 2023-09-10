@@ -256,7 +256,7 @@ void main() {
     #endif
     float solarIrradiance = Plancks(5778.0, wavelength) * ConeAngleToSolidAngle(sunAngularRadius);
     vec4 baseAttenuationCoefficients = vec4(rayleighCoefficient, mieCoefficient, ozoneCoefficient, cloudCoefficient);
-    float atmosphere = RaymarchAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
+    float atmosphere = PathtraceAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
     vec3 simulated = SpectrumToXYZExact_CIE2012(atmosphere / wavelengthPDF, wavelength) * xyzToRGBMatrix_D65;
 
     if(any(isnan(simulated))) {
