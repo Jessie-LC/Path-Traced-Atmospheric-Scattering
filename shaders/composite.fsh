@@ -19,7 +19,7 @@
 
 //#define ENABLE_CLOUDS //Very slow
 
-//#define EXPONENTIAL_DENSITY //Enables an approximate version of the atmosphere density functions. This also changes the aerosol coefficient function to the Preetham one.
+#define EXPONENTIAL_DENSITY //Enables an approximate version of the atmosphere density functions. This also changes the aerosol coefficient function to the Preetham one.
 
 #define PHASE_FUNCTION_RAYLEIGH 0 //[0 1]
 #define PHASE_FUNCTION_AEROSOL 0 //[0 1 2 3]
@@ -105,6 +105,7 @@ const bool colortex0Clear  = false;
 #include "/lib/atmosphere/constants.glsl"
 #include "/lib/atmosphere/misc.glsl"
 #include "/lib/atmosphere/pt.glsl"
+#include "/lib/atmosphere/raymarched.glsl"
 
 const float sensorWidth = 1e-3 * 36.0;
 const float sensorHeight = 1e-3 * 27.0;
@@ -255,7 +256,7 @@ void main() {
     #endif
     float solarIrradiance = Plancks(5778.0, wavelength) * ConeAngleToSolidAngle(sunAngularRadius);
     vec4 baseAttenuationCoefficients = vec4(rayleighCoefficient, mieCoefficient, ozoneCoefficient, cloudCoefficient);
-    float atmosphere = PathtraceAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
+    float atmosphere = RaymarchAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
     vec3 simulated = SpectrumToXYZExact_CIE2012(atmosphere / wavelengthPDF, wavelength) * xyzToRGBMatrix_D65;
 
     if(any(isnan(simulated))) {
