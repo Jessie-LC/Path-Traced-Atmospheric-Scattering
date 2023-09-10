@@ -19,7 +19,7 @@
 
 //#define ENABLE_CLOUDS //Very slow
 
-#define EXPONENTIAL_DENSITY //Enables an approximate version of the atmosphere density functions. This also changes the aerosol coefficient function to the Preetham one.
+//#define EXPONENTIAL_DENSITY //Enables an approximate version of the atmosphere density functions. This also changes the aerosol coefficient function to the Preetham one.
 
 #define PHASE_FUNCTION_RAYLEIGH 0 //[0 1]
 #define PHASE_FUNCTION_AEROSOL 0 //[0 1 2 3]

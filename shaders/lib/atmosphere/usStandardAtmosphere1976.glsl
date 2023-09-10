@@ -1,5 +1,6 @@
 #if !defined LIB_ATMOSPHERE_USSTANDARD1976
 #define LIB_ATMOSPHERE_USSTANDARD1976
+    const float g = 9.80665;
     /*
         Read this paper to understand the following model
         http://jimhawley.ca/downloads/Ballistics/Formulae_and_code_US_Standard_Atmosphere_1976.pdf
@@ -53,20 +54,22 @@
         us1976Data.lapseRateInLayer[5] = -2.8 / 1000.0;
         us1976Data.lapseRateInLayer[6] = -2.0 / 1000.0;
 
+        float geopotentialHeight = planetRadius * (1.0 - (planetRadius / (planetRadius + altitude)));
+
         for(int i = 0; i <= 6; ++i) {
             if(us1976Data.lapseRateInLayer[i] == 0.0) {
-                us1976Data.lapseExponentInLayer[i] = -9.81 / (rAir * us1976Data.tempAtBotOfLayer[i]);
+                us1976Data.lapseExponentInLayer[i] = -g / (rAir * us1976Data.tempAtBotOfLayer[i]);
             } else {
-                us1976Data.lapseExponentInLayer[i] = -9.81 / (rAir * us1976Data.lapseRateInLayer[i]);
+                us1976Data.lapseExponentInLayer[i] = -g / (rAir * us1976Data.lapseRateInLayer[i]);
             }
 
             if(i <= 5) {
-                float thicknessOfLayer = us1976Data.altAtTopOfLayer[i] - us1976Data.altAtBotOfLayer[i];
+                float thicknessOfLayer = min(us1976Data.altAtTopOfLayer[i], geopotentialHeight) - us1976Data.altAtBotOfLayer[i];
                 us1976Data.tempAtBotOfLayer[i + 1] = us1976Data.tempAtBotOfLayer[i] + (thicknessOfLayer * us1976Data.lapseRateInLayer[i]);
             }
         }
         for(int i = 0; i <= 5; ++i) {
-            float thicknessOfLayer = us1976Data.altAtTopOfLayer[i] - us1976Data.altAtBotOfLayer[i];
+            float thicknessOfLayer = min(us1976Data.altAtTopOfLayer[i], geopotentialHeight) - us1976Data.altAtBotOfLayer[i];
             float temp = 0.0;
             if(us1976Data.lapseRateInLayer[i] == 0.0) {
                 temp = us1976Data.lapseExponentInLayer[i] * thicknessOfLayer;
@@ -86,7 +89,7 @@
         us1976LU.layerGeometricAlt = altitude;
         us1976LU.layerGeopotentialAlt = planetRadius * (1.0 - (planetRadius / (planetRadius + us1976LU.layerGeometricAlt)));
 
-        for(int i = 0; i < 6; ++i) {
+        for(int i = 0; i <= 6; ++i) {
             if(us1976LU.layerGeopotentialAlt <= us1976Data.altAtTopOfLayer[i]) {
                 us1976LU.layer = i;
                 break;

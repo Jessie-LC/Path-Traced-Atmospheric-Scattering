@@ -52,7 +52,7 @@
 
         float ozone = OzoneDensity(altitudeKm);
 
-        return vec3(rm, ozone);
+        return max(vec3(rm, ozone), 0.0);
     }
 
     #ifndef EXPONENTIAL_DENSITY

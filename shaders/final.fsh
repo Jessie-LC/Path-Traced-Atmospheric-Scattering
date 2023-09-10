@@ -102,7 +102,8 @@ void main() {
     #endif
     finalColor = LinearToSrgb(CameraTonemap(color, ISO));
 
-    finalColor += Bayer64(gl_FragCoord.xy) / 64.0;
+    //finalColor = textureCoordinate.x > texture(usStandardAtmosphere, textureCoordinate).x / 1.0 ? vec3(0.0) : vec3(texture(usStandardAtmosphere, textureCoordinate).x / 1.0);
+    //finalColor = texture(usStandardAtmosphere, textureCoordinate).xyz / vec3(1.0, 101325.0, 288.15);
 
-    //finalColor = texture(usStandardAtmosphere, textureCoordinate).ggg / 101325.0;
+    finalColor += Bayer64(gl_FragCoord.xy) / 64.0;
 }

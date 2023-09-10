@@ -31,12 +31,8 @@ void main() {
     usStandardAtmosphere1976LU us1976LU = usStandardAtmosphere1976Lookup(R - planetRadius);
     usStandardAtmosphere1976LU seaLevel = usStandardAtmosphere1976Lookup(0.0);
 
-    if(R > 85e3) {
-        imageStore(usStandardAtmosphere_image, fragPos, vec4(0.0));
-    } else {
-        if(us1976LU.layerLocalDensity == 0.0) {
-            us1976LU.layerLocalDensity = exp(-R * inverseScaleHeights.x + scaledPlanetRadius.x) * seaLevel.layerLocalDensity;
-        }
+    if((R - planetRadius) > 85e3) {
+        us1976LU.layerLocalDensity = exp(-R * inverseScaleHeights.x + scaledPlanetRadius.x) / 3.0;
     }
 
     imageStore(usStandardAtmosphere_image, fragPos, vec4(us1976LU.layerLocalDensity / seaLevel.layerLocalDensity, max(us1976LU.layerLocalPressure, 0.0), max(us1976LU.layerLocalTemp, 0.0), 0.0));

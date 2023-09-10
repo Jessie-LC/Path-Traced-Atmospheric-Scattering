@@ -3,12 +3,12 @@
     float RaymarchAtmosphereTransmittance(in vec3 rayVector, in vec3 position, in vec4 baseAttenuationCoefficients) {
         float rayLength = dot(position, rayVector);
               rayLength = sqrt(rayLength * rayLength + square(atmosphereRadius) - dot(position, position)) - rayLength;
-        float stepSize  = rayLength / (float(32));
+        float stepSize  = rayLength / float(64);
         vec3  increment = rayVector * stepSize;
-        position += increment * 0.5;
+        position += increment * RandNextF();
 
         vec3 thickness = vec3(0.0);
-        for(int i = 0; i < 32; ++i, position += increment) {
+        for(int i = 0; i < 64; ++i, position += increment) {
             thickness += CalculateAtmosphereDensity(length(position));
         }
 
@@ -34,9 +34,9 @@
 
         vec2 sd = vec2((planetIntersected && planetDists.x < 0.0) ? planetDists.y : max(atmosphereDists.x, 0.0), (planetIntersected && planetDists.x > 0.0) ? planetDists.x : atmosphereDists.y);
 
-        float stepSize = length(sd.y - sd.x) / (float(64));
+        float stepSize = length(sd.y - sd.x) / float(64);
         vec3 increment = viewVector * stepSize;
-        vec3 position = viewVector * sd.x + (increment * 0.5 + viewPosition);
+        vec3 position = viewVector * sd.x + (increment * RandNextF() + viewPosition);
 
         vec3 scatteringCoefficients = vec3(baseAttenuationCoefficients.x, baseAttenuationCoefficients.y * aerosolScatteringAlbedo, 0.0);
 
@@ -75,6 +75,10 @@
 
             scattering += (scatteringCoefficients.x * airMass.x * phaseR + scatteringCoefficients.y * airMass.y * phaseM) * visibleScattering * RaymarchAtmosphereTransmittance(lightVector, position, baseAttenuationCoefficients);
             transmittance *= stepTransmittance;
+        }
+
+        if(isnan(scattering)) {
+            return irradiance;
         }
 
         return scattering * irradiance;
