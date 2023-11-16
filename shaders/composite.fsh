@@ -17,8 +17,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-//#define CAMERA
-//#define THICK_LENS_APPROXIMATION
+#define CAMERA
 
 //#define ENABLE_CLOUDS //Very slow
 
@@ -261,7 +260,12 @@ void main() {
 
             vec3 viewDirection = vec3(rayDirection.x, rayDirection.y, rayDirection.z);
             viewPosition += lensPosition / 1000.0;
+
+            viewPosition = Rotate(viewPosition, vec3(0.0, 1.0, 0.0), radians(60.0));
+            viewDirection = Rotate(viewDirection, vec3(0.0, 1.0, 0.0), radians(60.0));
         #else
+            lensFresnel = 1.0;
+
             vec2 uv  = (gl_FragCoord.xy * rcp(viewResolution.xy)) * 2.0 - 1.0;
                 uv += aa;
                 uv *= sensorSize / (2.0 * focalLength);

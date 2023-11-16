@@ -257,7 +257,7 @@
         vec3 rayDirection = viewVector;
         vec3 sunDirection = GenerateConeVector(lightVector, RandNext2F(), sunAngularRadius);
 
-        float throughput = 1.0;
+        float throughput = fresnel;
         int bounces = 0;
         while(bounces < SCATTERING_EVENTS) {
             if(invalid) break;

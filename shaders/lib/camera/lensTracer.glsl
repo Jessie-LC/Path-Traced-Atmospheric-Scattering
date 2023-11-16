@@ -12,7 +12,6 @@ struct LensInterface {
 #define IDEAL_FILM_IOR
 #define USE_POLYGONAL_APERTURE
 
-#define LENS_BOUNCES 10 //[0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20] //Extra bounces within the lens
 #define WIDE_FOV_LENS_APERTURE_SIZE 5.0 //[1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0]
 
 //#define ENABLE_ANTI_REFLECTIVE_COATING
@@ -161,243 +160,198 @@ void CalculateLensSystem(out vec3 rayDirection, out vec3 rayPosition, out float 
 
     WideFoVLensInterfaces(wavelength, interfaces, N_Lens);
 
-    #ifdef MANUAL_FOCUS
-        focusDistance = FOCUS_DISTANCE;
-    #endif
-
     mat2 T = GetLensTransferMatrix();
 
     float sensorPosition = FindFocusPlanePosition(T, focusDistance * 1000.0, interfaces[num_interfaces - 1].axisPosition);
-    #if SELECTED_LENS == 7
-        sensorPosition = 100.0;
-    #endif
 
     rayPosition = GeneratePointOnFilm(sensorPosition);
 
     LensInterface backInterface = interfaces[num_interfaces - 1];
 
-    #ifndef THICK_LENS_APPROXIMATION
-        vec3 interfacePoint = SampleBackLensInterface(backInterface, RandNext2F());
-        vec3 interfaceNormal = backInterface.shapeType == 1 ? normalize(interfacePoint - vec3(0.0, 0.0, backInterface.axisPosition - -backInterface.curvatureRadius)) : vec3(0.0, 0.0, -1.0);
-    #else
-        float apertureRadius = SONNAR_APERTURE_SIZE;
-
-        #ifdef USE_POLYGONAL_APERTURE
-            vec3 interfacePoint = vec3(apertureRadius * BokehShape(), backInterface.axisPosition);
-        #else
-            vec2 rng = RandNext2F();
-            vec3 interfacePoint = vec3(apertureRadius * (vec2(cos(tau * rng.x), sin(tau * rng.x)) * sqrt(rng.y)), backInterface.axisPosition);
-        #endif
-        vec3 interfaceNormal = normalize(vec3(0.0, 0.0, 1.0));
-    #endif
+    vec3 interfacePoint = SampleBackLensInterface(backInterface, RandNext2F());
+    vec3 interfaceNormal = normalize(interfacePoint - vec3(0.0, 0.0, backInterface.axisPosition - -backInterface.curvatureRadius));
     vec3 interfaceFromSensor = interfacePoint - rayPosition;
     rayDirection = normalize(interfaceFromSensor);
 
-    #ifndef THICK_LENS_APPROXIMATION
-        float interfaceArea = backInterface.shapeType == 1 ? 2.0 * pi * (1.0 - cos(asin(backInterface.axisRadius / -backInterface.curvatureRadius))) * -backInterface.curvatureRadius * -backInterface.curvatureRadius : pi * square(backInterface.axisRadius);
-        float interfaceWeight = interfaceArea * dot(rayDirection, interfaceNormal) / dot(interfaceFromSensor, interfaceFromSensor);
-        float sensorWeight = pi * dot(rayDirection, vec3(0.0, 0.0, -1.0));
-        throughput = sensorWeight * interfaceWeight;
+    float interfaceArea = 2.0 * pi * (1.0 - cos(asin(backInterface.axisRadius / -backInterface.curvatureRadius))) * -backInterface.curvatureRadius * -backInterface.curvatureRadius;
+    float interfaceWeight = interfaceArea * dot(rayDirection, interfaceNormal) / dot(interfaceFromSensor, interfaceFromSensor);
+    float sensorWeight = dot(rayDirection, vec3(0.0, 0.0, -1.0));
+    throughput = sensorWeight * (interfaceArea / tau); //Not correct, but it isn't completely broken
 
-        invalid = false;
-        int bounces = 0;
-        int interfaceIndex = num_interfaces - 1;
-        int direction = -1;
-        do {
-            if(bounces > num_interfaces * 8) break;
-            LensInterface interfaceData = interfaces[interfaceIndex];
+    invalid = false;
+    int bounces = 0;
+    int interfaceIndex = num_interfaces - 1;
+    int direction = -1;
+    do {
+        if(bounces > num_interfaces * 8) break;
+        LensInterface interfaceData = interfaces[interfaceIndex];
 
-            vec3 interfaceNormal;
-            if (interfaceData.shapeType == 1) {
-                vec3 sphereOrigin = vec3(0.0, 0.0, interfaceData.axisPosition - -interfaceData.curvatureRadius);
+        vec3 interfaceNormal;
+        if (interfaceData.shapeType == 1) {
+            vec3 sphereOrigin = vec3(0.0, 0.0, interfaceData.axisPosition - -interfaceData.curvatureRadius);
 
-                float t0, t1;
-                int intersectionType = RaySphereIntersection(
-                    rayPosition, rayDirection,
-                    sphereOrigin, -interfaceData.curvatureRadius,
-                    t0, t1
-                );
+            float t0, t1;
+            int intersectionType = RaySphereIntersection(
+                rayPosition, rayDirection,
+                sphereOrigin, -interfaceData.curvatureRadius,
+                t0, t1
+            );
 
-                if (intersectionType == 0) {
+            if (intersectionType == 0) {
+                invalid = true;
+                break;
+            } else if (intersectionType == 1) {
+                if (-direction * -interfaceData.curvatureRadius > 0.0) {
                     invalid = true;
                     break;
-                } else if (intersectionType == 1) {
-                    if (-direction * -interfaceData.curvatureRadius > 0.0) {
-                        invalid = true;
-                        break;
-                    }
+                }
 
+                rayPosition += rayDirection * t0;
+            } else if (intersectionType == 2) {
+                if (-direction * -interfaceData.curvatureRadius < 0.0) {
+                    rayPosition += rayDirection * t1;
+                } else {
                     rayPosition += rayDirection * t0;
-                } else if (intersectionType == 2) {
-                    if (-direction * -interfaceData.curvatureRadius < 0.0) {
-                        rayPosition += rayDirection * t1;
-                    } else {
-                        rayPosition += rayDirection * t0;
-                    }
-                } else {
-                    // This should be unreachable.
-                    invalid = true;
-                    break;
                 }
+            } else {
+                // This should be unreachable.
+                invalid = true;
+                break;
+            }
 
-                if(length(rayPosition.xy) > interfaceData.axisRadius) invalid = true;
+            if(length(rayPosition.xy) > interfaceData.axisRadius) invalid = true;
 
-                interfaceNormal = normalize(rayPosition - sphereOrigin);
-            } else if (interfaceData.shapeType == 0) {
-                interfaceNormal = vec3(0.0, 0.0, 1.0);
+            interfaceNormal = normalize(rayPosition - sphereOrigin);
+        } else if (interfaceData.shapeType == 0) {
+            interfaceNormal = vec3(0.0, 0.0, 1.0);
 
+            float t;
+            int intersectionType = RayPlaneIntersection(
+                rayPosition, rayDirection,
+                vec3(0.0, 0.0, interfaceData.axisPosition), interfaceNormal,
+                t
+            );
+
+            if (intersectionType == 0) {
+                invalid = true;
+                break;
+            } else if (intersectionType == 1) {
+                rayPosition += rayDirection * t;
+            } else if (intersectionType == 2) {
+                invalid = true;
+                break;
+            } else {
+                // This should be unreachable.
+                invalid = true;
+                break;
+            }
+        } else if (interfaceData.shapeType == 2) {
+            interfaceNormal = vec3(0.0, 0.0, 1.0);
+
+            #ifndef USE_POLYGONAL_APERTURE
+                float t = RDI(rayPosition - vec3(0.0, 0.0, interfaceData.axisPosition), rayDirection, interfaceData.axisRadius);
+                bool intersection = t > 0.0001;
+            #else
                 float t;
-                int intersectionType = RayPlaneIntersection(
-                    rayPosition, rayDirection,
-                    vec3(0.0, 0.0, interfaceData.axisPosition), interfaceNormal,
-                    t
-                );
+                bool intersection = IntersectAperture(rayPosition - vec3(0.0, 0.0, interfaceData.axisPosition), rayDirection, interfaceData.axisRadius, t);
+            #endif
+            int intersectionType = intersection ? 1 : 0;
 
-                if (intersectionType == 0) {
-                    invalid = true;
-                    break;
-                } else if (intersectionType == 1) {
-                    rayPosition += rayDirection * t;
-                } else if (intersectionType == 2) {
-                    invalid = true;
-                    break;
-                } else {
-                    // This should be unreachable.
-                    invalid = true;
-                    break;
-                }
-            } else if (interfaceData.shapeType == 2) {
-                interfaceNormal = vec3(0.0, 0.0, 1.0);
-
-                #ifndef USE_POLYGONAL_APERTURE
-                    float t = RDI(rayPosition - vec3(0.0, 0.0, interfaceData.axisPosition), rayDirection, interfaceData.axisRadius);
-                    bool intersection = t > 0.0001;
-                #else
-                    float t;
-                    bool intersection = IntersectAperture(rayPosition - vec3(0.0, 0.0, interfaceData.axisPosition), rayDirection, interfaceData.axisRadius, t);
-                #endif
-                int intersectionType = intersection ? 1 : 0;
-
-                if (intersectionType == 0) {
-                    invalid = true;
-                    break;
-                } else if (intersectionType == 1) {
-                    rayPosition += rayDirection * t;
-                } else if (intersectionType == 2) {
-                    invalid = true;
-                    break;
-                } else {
-                    // This should be unreachable.
-                    invalid = true;
-                    break;
-                }
-            }
-
-            float n1;
-            float n2;
-            if(direction == -1) {
-                n1 = N_Lens[interfaceIndex + 1];
-                n2 = N_Lens[interfaceIndex];
-            } else if(direction == 1) {
-                n1 = N_Lens[interfaceIndex];
-                n2 = N_Lens[interfaceIndex + 1];
-            }
-
-            if (dot(rayDirection, interfaceNormal) > 0.0) {
-                interfaceNormal = -interfaceNormal;
-            }
-
-            float fresnel_R;
-            float fresnel_T;
-            if(interfaceData.hasThinCoating) {
-                #ifdef IDEAL_FILM_IOR
-                    vec2 filmIOR = vec2(sqrt(n1 * n2), 0.0);
-                #else
-                    vec2 filmIOR = Silica(wavelength);
-                #endif
-                //The divide by 2 should hopefully result in a pi/2 phase change
-                fresnel_R = FresnelThinFilmInterferenceReflected(dot(interfaceNormal,-rayDirection), interfaceData.coatThickness / 2.0, wavelength, vec2(n1, 0.0), filmIOR, vec2(n2, 0.0));
-                fresnel_T = FresnelThinFilmInterferenceTransmitted(dot(interfaceNormal,-rayDirection), interfaceData.coatThickness / 2.0, wavelength, vec2(n1, 0.0), filmIOR, vec2(n2, 0.0));
+            if (intersectionType == 0) {
+                invalid = true;
+                break;
+            } else if (intersectionType == 1) {
+                rayPosition += rayDirection * t;
+            } else if (intersectionType == 2) {
+                invalid = true;
+                break;
             } else {
-                fresnel_R = FresnelNonPolarized_R(dot(interfaceNormal,-rayDirection), vec2(n1, 0.0), vec2(n2, 0.0));
-                fresnel_T = FresnelNonPolarized_T(dot(interfaceNormal,-rayDirection), vec2(n1, 0.0), vec2(n2, 0.0));
-            }
-
-            float specBounceProbability = fresnel_R;
-
-            bool specularBounce = specBounceProbability > RandNextF();
-        
-            if(specularBounce) {
-                direction = -direction;
-
-                throughput /= specBounceProbability;
-
-                throughput *= fresnel_R;
-
-                rayDirection = reflect(rayDirection, interfaceNormal);        
-            } else {
-                throughput /= 1.0 - specBounceProbability;
-
-                throughput *= fresnel_T;
-
-                rayDirection = refract(rayDirection, interfaceNormal, n1 / n2);
-            }
-
-            //Afaik this branch shouldn't do anything if fresnel is working properly for TIR, but for some reason this fixes an error 
-            if (rayDirection == vec3(0.0)) {
+                // This should be unreachable.
                 invalid = true;
                 break;
             }
-
-            if(isinf(throughput)) {
-                invalid = true;
-                break;
-            }
-            if(isnan(throughput)) {
-                invalid = true;
-                break;
-            }
-            if(any(isnan(rayDirection))) {
-                invalid = true;
-                break;
-            }
-            if(any(isinf(rayDirection))) {
-                invalid = true;
-                break;
-            }
-
-            interfaceIndex += direction;
-            bounces += 1;
-        } while(interfaceIndex >= 0 && interfaceIndex < num_interfaces);
-
-        if (direction > 0 || interfaceIndex >= 0) {
-            invalid = true;
         }
-    #else
-        float sideLength = 2.0 * apertureRadius * sin(pi / 5.0);
-        float perimeter = 5.0 * sideLength;
-        float apothem = apertureRadius * cos(pi / 5.0);
 
-        #ifdef USE_POLYGONAL_APERTURE
-            float interfaceArea = (perimeter / 2.0) * apothem;
-        #else
-            float interfaceArea = pi * square(apertureRadius);
-        #endif
-        float interfaceWeight = interfaceArea * dot(rayDirection, interfaceNormal) / dot(interfaceFromSensor, interfaceFromSensor);
-        float sensorWeight = pi * dot(rayDirection, vec3(0.0, 0.0, -1.0));
-        throughput = 1.0;//sensorWeight * interfaceWeight;
+        float n1;
+        float n2;
+        if(direction == -1) {
+            n1 = N_Lens[interfaceIndex + 1];
+            n2 = N_Lens[interfaceIndex];
+        } else if(direction == 1) {
+            n1 = N_Lens[interfaceIndex];
+            n2 = N_Lens[interfaceIndex + 1];
+        }
 
-        // Get transfer matrix of the lens at this wavelength
-        // Using inverse because we want it in the opposite direction from what I calculate it for
-        mat2 transferMatrix = inverse(GetLensTransferMatrix(wavelength));
+        if (dot(rayDirection, interfaceNormal) > 0.0) {
+            interfaceNormal = -interfaceNormal;
+        }
 
-        // Use transfer matrix
-        vec2 outRayX = transferMatrix * vec2(interfacePoint.x, rayDirection.x / rayDirection.z);
-        vec2 outRayY = transferMatrix * vec2(interfacePoint.y, rayDirection.y / rayDirection.z);
+        float fresnel_R;
+        float fresnel_T;
+        if(interfaceData.hasThinCoating) {
+            #ifdef IDEAL_FILM_IOR
+                vec2 filmIOR = vec2(sqrt(n1 * n2), 0.0);
+            #else
+                vec2 filmIOR = Silica(wavelength);
+            #endif
+            //The divide by 2 should hopefully result in a pi/2 phase change
+            fresnel_R = FresnelThinFilmInterferenceReflected(dot(interfaceNormal,-rayDirection), interfaceData.coatThickness / 2.0, wavelength, vec2(n1, 0.0), filmIOR, vec2(n2, 0.0));
+            fresnel_T = FresnelThinFilmInterferenceTransmitted(dot(interfaceNormal,-rayDirection), interfaceData.coatThickness / 2.0, wavelength, vec2(n1, 0.0), filmIOR, vec2(n2, 0.0));
+        } else {
+            fresnel_R = FresnelNonPolarized_R(dot(interfaceNormal,-rayDirection), vec2(n1, 0.0), vec2(n2, 0.0));
+            fresnel_T = FresnelNonPolarized_T(dot(interfaceNormal,-rayDirection), vec2(n1, 0.0), vec2(n2, 0.0));
+        }
 
-        rayPosition  = vec3(outRayX.x, outRayY.x, 0.0);
-        rayDirection = -normalize(vec3(outRayX.y, outRayY.y, 1.0));
-    #endif
+        float specBounceProbability = fresnel_R;
+
+        bool specularBounce = specBounceProbability > RandNextF();
+    
+        if(specularBounce) {
+            direction = -direction;
+
+            throughput /= specBounceProbability;
+
+            throughput *= fresnel_R;
+
+            rayDirection = reflect(rayDirection, interfaceNormal);        
+        } else {
+            throughput /= 1.0 - specBounceProbability;
+
+            throughput *= fresnel_T;
+
+            rayDirection = refract(rayDirection, interfaceNormal, n1 / n2);
+        }
+
+        //Afaik this branch shouldn't do anything if fresnel is working properly for TIR, but for some reason this fixes an error 
+        if (rayDirection == vec3(0.0)) {
+            invalid = true;
+            break;
+        }
+
+        if(isinf(throughput)) {
+            invalid = true;
+            break;
+        }
+        if(isnan(throughput)) {
+            invalid = true;
+            break;
+        }
+        if(any(isnan(rayDirection))) {
+            invalid = true;
+            break;
+        }
+        if(any(isinf(rayDirection))) {
+            invalid = true;
+            break;
+        }
+
+        interfaceIndex += direction;
+        bounces += 1;
+    } while(interfaceIndex >= 0 && interfaceIndex < num_interfaces);
+
+    if (direction > 0 || interfaceIndex >= 0) {
+        invalid = true;
+    }
 
     if(isnan(throughput)) throughput = 0.0;
     if(isinf(throughput)) throughput = 1.0;
