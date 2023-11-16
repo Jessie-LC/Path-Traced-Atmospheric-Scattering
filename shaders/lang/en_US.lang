@@ -1,4 +1,7 @@
+screen.Non_PT_Settings=Non-PT Settings
+
 option.EXPONENTIAL_DENSITY=Use Exponential Density Functions
+option.USE_RAY_MARCHED_ATMOSPHERE=Use Non-PT Atmosphere
 option.PHASE_FUNCTION_RAYLEIGH=Phase Function Rayleigh
 value.PHASE_FUNCTION_RAYLEIGH.0=Rayleigh
 value.PHASE_FUNCTION_RAYLEIGH.1=Isotropic
@@ -8,10 +11,16 @@ value.PHASE_FUNCTION_AEROSOL.1=Henyey Greenstein
 value.PHASE_FUNCTION_AEROSOL.2=Klein Nishina
 value.PHASE_FUNCTION_AEROSOL.3=Henyey Greenstein + Draine
 
+option.RAY_MARCH_TRANSMITTANCE_STEPS=Transmittance Steps
+option.RAY_MARCH_SCATTERING_STEPS=Scattering Steps
+
 option.TURBIDITY=Turbidity
 option.ENABLE_CLOUDS=Enable Clouds
 option.SCATTERING_EVENTS=Scattering Events
-option.PREETHAM_OZONE=Use Preetham Ozone
+option.OZONE_MODE=Ozone Data
+value.OZONE_MODE.0=Gorshelev-Weber-Chehade-Burrows
+value.OZONE_MODE.1=Preetham Fit
+value.OZONE_MODE.2=Preetham Measured
 option.USER_DEFINED_COEFFICIENTS=User Defined Coefficients
 option.RAYLEIGH_COLOR_R=Rayleigh R
 option.RAYLEIGH_COLOR_G=Rayleigh G

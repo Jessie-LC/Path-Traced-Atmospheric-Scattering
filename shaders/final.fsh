@@ -71,6 +71,28 @@ float EV100ToExposure(in float EV100) {
     return 1.0 / maxLuminance;
 }
 
+const float TonemapPoints[5] = float[5](
+    0.0,
+    0.25,
+    0.5,
+    0.75,
+    1.0
+);
+
+int BinarySearch(int lowIndex, int highIndex, float toFind) {
+    while (lowIndex < highIndex) {
+        int midIndex = (lowIndex + highIndex) >> 1;
+        if (TonemapPoints[midIndex] < toFind) {
+            lowIndex = midIndex + 1;
+        } else if (TonemapPoints[midIndex] > toFind) {
+            highIndex = midIndex;
+        } else {
+            return midIndex;
+        }
+    }
+    return highIndex - 1;
+}
+
 void main() {
     float exposure = EV100ToExposure(ComputeEV100()) * rcp(pi);
     vec3 color = texture(colortex0, textureCoordinate).rgb * exposure;
@@ -101,9 +123,6 @@ void main() {
         }
     #endif
     finalColor = LinearToSrgb(CameraTonemap(color, ISO));
-
-    //finalColor = textureCoordinate.x > texture(usStandardAtmosphere, textureCoordinate).x / 1.0 ? vec3(0.0) : vec3(texture(usStandardAtmosphere, textureCoordinate).x / 1.0);
-    //finalColor = texture(usStandardAtmosphere, textureCoordinate).xyz / vec3(1.0, 101325.0, 288.15);
 
     finalColor += Bayer64(gl_FragCoord.xy) / 64.0;
 }

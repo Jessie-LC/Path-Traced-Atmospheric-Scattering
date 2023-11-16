@@ -82,7 +82,7 @@
             float spectrum;
             RGBToSpectrum(spectrum, wavelength, v.r, v.g, v.b, 1);
             spectrum = CameraGetIntensity(spectrum, iso, wavelength);
-            xyz += SpectrumToXYZExact_CIE2012(spectrum / 683.368, wavelength) / numberOfWavelengths;
+            xyz += SpectrumToXYZExact_CIE2012(spectrum, wavelength) / numberOfWavelengths;
         }
         return xyz * xyzToRGBMatrix_D65;
     }

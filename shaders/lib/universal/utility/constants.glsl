@@ -8,6 +8,8 @@ const float piSquared = pi*pi;
 
 const vec3 lumacoeff_rec709 = vec3(0.2125, 0.7154, 0.0721);
 
+const float ringRotation = 45.0;
+
 const int noiseTextureResolution = 128;
 
 const mat3 xyzToRGBMatrix_D50 = mat3(
@@ -46,7 +48,102 @@ const mat3 D50_2_D65 = mat3(
      0.0122982, -0.0204830,  1.3299098
 );
 
+const int SpectraEntries = 8;
+
+const float SpectraWavelengths[SpectraEntries] = float[SpectraEntries](
+    6000.0,
+    7800.0,
+    8250.0,
+    9000.0,
+    9700.0,
+    14500.0,
+    17800.0,
+    18000.0
+);
+const float SpectraValues[SpectraEntries] = float[SpectraEntries](
+    0.0,
+	0.0,
+	0.87,
+	0.7,
+	1.0,
+	0.25,
+    0.0,
+	0.0
+);
+
 const mat3 sRGB_D50_2_sRGB_D65 = (rgbToXYZMatrix_D50 * D50_2_D65) * xyzToRGBMatrix_D65;
+
+const float preethamWavelengths[33] = float[](
+    450.0,
+    460.0,
+    470.0,
+    480.0,
+    490.0,
+    500.0,
+    510.0,
+    520.0,
+    530.0,
+    540.0,
+    550.0,
+    560.0,
+    570.0,
+    580.0,
+    590.0,
+    600.0,
+    610.0,
+    620.0,
+    630.0,
+    640.0,
+    650.0,
+    660.0,
+    670.0,
+    680.0,
+    690.0,
+    700.0,
+    710.0,
+    720.0,
+    730.0,
+    740.0,
+    750.0,
+    760.0,
+    770.0
+);
+
+const float preethamOzone[33] = float[](
+    0.3,
+    0.6,
+    0.9,
+    1.4,
+    2.1,
+    3.0,
+    4.0,
+    4.8,
+    6.3,
+    7.5,
+    8.5,
+    10.3,
+    12.0,
+    12.0,
+    11.5,
+    12.5,
+    12.0,
+    10.5,
+    9.0,
+    7.9,
+    6.7,
+    5.7,
+    4.8,
+    3.6,
+    2.8,
+    2.3,
+    1.8,
+    1.4,
+    1.1,
+    1.0,
+    0.9,
+    0.7,
+    0.4
+);
 
 const float ozoneCrossSection[441] = float[441](
     6.80778e-24,

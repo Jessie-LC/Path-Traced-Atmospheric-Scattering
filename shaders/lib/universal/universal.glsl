@@ -1,5 +1,6 @@
 #include "utility/constants.glsl"
 #include "utility/macros.glsl"
+#include "utility/complex.glsl"
 #include "utility/rotate.glsl"
 #include "utility/fastMath.glsl"
 #include "utility/converters.glsl"

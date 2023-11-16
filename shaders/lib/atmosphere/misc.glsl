@@ -34,7 +34,7 @@
 
         return vec2(0.0, uvR);
     }
-    vec3 GetUS_STandardAtmosphereLUT(in float coreDistance) {
+    vec3 GetUS_StandardAtmosphereLUT(in float coreDistance) {
         return texture(usStandardAtmosphere, US_StandardAtmosphereLookupUV(coreDistance)).rgb;
     }
 
@@ -43,7 +43,7 @@
 
         vec2 rm;
         #ifndef EXPONENTIAL_DENSITY
-            rm.x = GetUS_STandardAtmosphereLUT(coreDistance).r;
+            rm.x = GetUS_StandardAtmosphereLUT(coreDistance).r;
             rm.y = AerosolDensity(coreDistance - planetRadius);
         #else
             rm.x = RayleighDensityExp(coreDistance);
@@ -88,7 +88,7 @@
         return 0.0001 * ozoneNumberDensity * ozoneCrossSection[int(wavelength - 390.0)];
     }
 
-    float PreethamBetaO(in float wavelength) {
+    float PreethamBetaO_Fit(in float wavelength) {
         wavelength = wavelength - 390.0;
         float p1 = NormalDistribution(wavelength, 202.0, 15.0) * 14.4;
         float p2 = NormalDistribution(wavelength, 170.0, 10.0) * 6.5;
@@ -102,6 +102,37 @@
         float p10 = NormalDistribution(wavelength, 220.0, 10.0) * 2.0;
         float p11 = NormalDistribution(wavelength, 186.0, 8.0) * 1.3;
         return 0.0001 * ozoneNumberDensity * ((p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10 + p11) / 1e20);
+    }
+
+    int BinarySearch(int lowIndex, int highIndex, float toFind) {
+        while (lowIndex < highIndex) {
+            int midIndex = (lowIndex + highIndex) >> 1;
+            if (preethamWavelengths[midIndex] < toFind) {
+                lowIndex = midIndex + 1;
+            } else if (preethamWavelengths[midIndex] > toFind) {
+                highIndex = midIndex;
+            } else {
+                return midIndex;
+            }
+        }
+        return highIndex - 1;
+    }
+
+    float PreethamBetaO_Interpolated(in float wavelength) {
+        if(wavelength < 455.0 || wavelength > 765.0) return 0.0;
+        wavelength = clamp(wavelength, 450.0, 770.0);
+        int k = BinarySearch(0, 32, wavelength);
+        float pk = preethamOzone[k];
+        float pk1 = preethamOzone[k + 1];
+        float pk2 = preethamOzone[k + 2];
+        float pkn1 = preethamOzone[k - 1];
+        float xk = preethamWavelengths[k];
+        float xk1 = preethamWavelengths[k + 1];
+        float xk2 = preethamWavelengths[k + 2];
+        float xkn1 = preethamWavelengths[k - 1];
+        float mk = CardinalSplineM(pk1, pkn1, xk1, xkn1);
+        float mk1 = CardinalSplineM(pk2, pk, xk2, xk);
+        return 0.0001 * ozoneNumberDensity * (CubicHermiteSpline(pk, pk1, mk, mk1, wavelength, xk, xk1) / 2.5e21);
     }
 
     #ifdef USER_DEFINED_COEFFICIENTS
@@ -159,7 +190,7 @@
 
         position += vec3(1500.0, 0.0, 0.0);
 
-        vec3 cloudPosition = position / (cloudsThickness*512.0);
+        vec3 cloudPosition = position / (cloudsThickness*64.0);
 
         float coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.1).r;
               coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.3).r * 0.8 + coverageNoise;

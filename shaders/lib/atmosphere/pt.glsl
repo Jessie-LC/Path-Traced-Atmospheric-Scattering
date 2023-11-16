@@ -242,7 +242,7 @@
         return saturate(transmittance);
     }
 
-    float PathtraceAtmosphereScattering(in vec3 viewPosition, in vec3 viewVector, in vec3 lightVector, in vec4 baseAttenuationCoefficients, in float irradiance, in float wavelength) {
+    float PathtraceAtmosphereScattering(in vec3 viewPosition, in vec3 viewVector, in vec3 lightVector, in vec4 baseAttenuationCoefficients, in float irradiance, in float wavelength, in float fresnel, in bool invalid) {
         int component;
 
         float estimate = 0.0;
@@ -260,6 +260,7 @@
         float throughput = 1.0;
         int bounces = 0;
         while(bounces < SCATTERING_EVENTS) {
+            if(invalid) break;
             vec2 aid = RSI(position, rayDirection, atmosphereRadius);
             vec2 pid = RSI(position, rayDirection, atmosphereLowerLimit);
             bool planetIntersected = pid.x > 0.0;

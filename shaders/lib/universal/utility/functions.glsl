@@ -147,6 +147,56 @@ vec4 linearstep(in vec4 x, float low, float high) {
     return saturate(mapped);
 }
 
+float CubicHermite00(float x) { return (1.0 + (2.0 * x)) * square(1.0 - x); }
+float CubicHermite01(float x) { return square(x) * (3.0 - (2.0 * x)); }
+float CubicHermite10(float x) { return x * square(1.0 - x); }
+float CubicHermite11(float x) { return square(x) * (x - 1.0); }
+float CubicHermiteSpline(in float pk, in float pk1, in float mk, in float mk1, in float x, in float xk, in float xk1) {
+    float t = (x - xk) / (xk1 - xk);
+    float scale = xk1 - xk;
+    return CubicHermite00(t) * pk + CubicHermite10(t) * scale * mk + CubicHermite01(t) * pk1 + CubicHermite11(t) * scale * mk1;
+}
+
+float CardinalSplineM(in float pk1, in float pkn1, in float xk1, in float xkn1) {
+    float c = 0.55;
+    return (1.0 - c) * ((pk1 - pkn1) / (xk1 - xkn1));
+}
+
+int BinarySearchSpectra(int lowIndex, int highIndex, float toFind) {
+    while (lowIndex < highIndex) {
+        int midIndex = (lowIndex + highIndex) >> 1;
+        if (SpectraWavelengths[midIndex] < toFind) {
+            lowIndex = midIndex + 1;
+        } else if (SpectraWavelengths[midIndex] > toFind) {
+            highIndex = midIndex;
+        } else {
+            return midIndex;
+        }
+    }
+    return highIndex - 1;
+}
+
+float SpectraToXYZ_Infrared(in float wavelength) {
+    if(wavelength < SpectraWavelengths[0] + 1.0 || wavelength > SpectraWavelengths[SpectraEntries - 1] - 1.0) return 0.0;
+    wavelength = clamp(wavelength, SpectraWavelengths[0], SpectraWavelengths[SpectraEntries - 1]);
+    int k = BinarySearchSpectra(0, SpectraEntries - 1, wavelength);
+    float pk = SpectraValues[k];
+    float pk1 = SpectraValues[k + 1];
+    float pk2 = SpectraValues[k + 2];
+    float pkn1 = SpectraValues[k - 1];
+    float xk = SpectraWavelengths[k];
+    float xk1 = SpectraWavelengths[k + 1];
+    float xk2 = SpectraWavelengths[k + 2];
+    float xkn1 = SpectraWavelengths[k - 1];
+    float mk = CardinalSplineM(pk1, pkn1, xk1, xkn1);
+    float mk1 = CardinalSplineM(pk2, pk, xk2, xk);
+    float curve = CubicHermiteSpline(pk, pk1, mk, mk1, wavelength, xk, xk1);
+    if(isnan(curve)) curve = 0.0;
+    if(isinf(curve)) curve = 3.4e38;
+    if(curve < -1.0) curve = 0.0;
+    return curve;
+}
+
 float AddUvMargin(float uv, int   resolution) { return uv * (1.0 - 1.0 / resolution) + (0.5 / resolution); }
 vec2  AddUvMargin(vec2 uv,  ivec2 resolution) { return uv * (1.0 - 1.0 / resolution) + (0.5 / resolution); }
 vec3  AddUvMargin(vec3 uv,  ivec3 resolution) { return uv * (1.0 - 1.0 / resolution) + (0.5 / resolution); }
@@ -210,7 +260,7 @@ vec4 textureCatmullRom(in sampler2D tex, vec2 uv) {
 
 vec2 sincos(float x) { return vec2(sin(x), cos(x)); }
 
-vec2 GetEquirectangularCoord(in vec3 rayDirection) {
+vec2 EquirectangularCoord(in vec3 rayDirection) {
     float lon = atan(rayDirection.z, rayDirection.x);
     if(rayDirection.z < 0) {
         lon = 2 * pi - atan(-rayDirection.z, rayDirection.x);
@@ -219,7 +269,7 @@ vec2 GetEquirectangularCoord(in vec3 rayDirection) {
     float lat = acos(rayDirection.y);
 
     const vec2 rads = vec2(1.0 / (pi * 2.0), 1.0 / pi);
-    vec2 sphereCoords = vec2(lon, lat) * rads;
+    vec2 sphereCoords = vec2(-lon, lat) * rads;
 
     return sphereCoords;
 }
@@ -235,6 +285,42 @@ vec2 RSI(vec3 pos, vec3 dir, float radius) {
     vec2 ret = -posDotDir + vec2(-endDist, endDist);
 
     return ret;
+}
+
+float RDI(vec3 rayPos, vec3 rayDir, in float radiusInner, in float radiusOuter) {
+    rayPos = Rotate(rayPos, vec3(1.0, 0.0, 0.0), radians(ringRotation));
+    rayDir = Rotate(rayDir, vec3(1.0, 0.0, 0.0), radians(ringRotation));
+
+    if (rayPos.z == 0.0) { return 0.0; }
+    if (sign(rayPos.z) == sign(rayDir.z)) { return -1.0; }
+    
+    float tPlane = -rayPos.z / rayDir.z;
+    
+    if (tPlane < 0.0) { return -1.0; }
+    
+    vec3 iPos = rayPos + rayDir * tPlane;
+    float radius = length(iPos);
+    
+    if (radiusInner > radius) { return -1.0; }
+    if (radiusOuter < radius) { return -1.0; }
+    
+    return tPlane;
+}
+
+float RDI(vec3 rayPos, vec3 rayDir, in float radiusOuter) {
+    if (rayPos.z == 0.0) { return 0.0; }
+    if (sign(rayPos.z) == sign(rayDir.z)) { return -1.0; }
+    
+    float tPlane = -rayPos.z / rayDir.z;
+    
+    if (tPlane < 0.0) { return -1.0; }
+    
+    vec3 iPos = rayPos + rayDir * tPlane;
+    float radius = length(iPos);
+    
+    if (radiusOuter < radius) { return -1.0; }
+    
+    return tPlane;
 }
 
 bool IntersectSphere(in vec3 rayPosition, in vec3 rayDirection, in float radius, out float dist) {
@@ -313,6 +399,94 @@ int LineSphereIntersect(
 	return 2;
 }
 
+// Returns 0 if no intersection, 1 if point intersection, 2 if 2 point intersection
+// First point of intersection = Lo + t0 * Lv
+// Second point of intersection = Lo + t1 * Lv
+int RaySphereIntersection(
+    vec3 Ro, vec3 Rv,
+    vec3 So, float Sr,
+    out float t0, out float t1
+) {
+    float rSquared = Sr * Sr;
+    float dSquared = dot(Ro - So, Ro - So);
+    bool insideSphere = dSquared < rSquared;
+
+    float VdotD = dot(Rv, Ro - So);
+
+    float delta = VdotD * VdotD + rSquared - dSquared;
+
+    if (delta < 0.0 || (!insideSphere && VdotD > 0.0)) {
+        return 0;
+    }
+    if (delta == 0.0) {
+        t0 = -VdotD;
+        return 1;
+    }
+
+    delta = sqrt(delta);
+
+    if (insideSphere) {
+        t0 = -VdotD + delta;
+        return 1;
+    }
+
+    t0 = -VdotD - delta;
+    t1 = -VdotD + delta;
+
+    return 2;
+}
+
+bool IntersectTriangle_MT97(in vec3 rayPosition, in vec3 rayDirection, vec3 vert0, vec3 vert1, vec3 vert2, out float t) {
+    // find vectors for two edges sharing vert0
+    vec3 edge1 = vert1 - vert0;
+    vec3 edge2 = vert2 - vert0;
+    // begin calculating determinant - also used to calculate U parameter
+    vec3 pvec = cross(rayDirection, edge2);
+    // if determinant is near zero, ray lies in plane of triangle
+    float det = dot(edge1, pvec);
+    float inv_det = 1.0f / det;
+    // calculate distance from vert0 to ray origin
+    vec3 tvec = rayPosition - vert0;
+    // calculate U parameter and test bounds
+    float u = dot(tvec, pvec) * inv_det;
+    if (u < 0.0 || u > 1.0f)
+        return false;
+    // prepare to test V parameter
+    vec3 qvec = cross(tvec, edge1);
+    // calculate V parameter and test bounds
+    float v = dot(rayDirection, qvec) * inv_det;
+    if (v < 0.0 || u + v > 1.0f)
+        return false;
+    // calculate t, ray intersects triangle
+    t = dot(edge2, qvec) * inv_det;
+    return true;
+}
+
+bool IntersectAperture(in vec3 rayPosition, in vec3 rayDirection, in float radius, out float dist) {
+    dist = 1e35;
+
+    int blades = 5;
+    bool hit = false;
+    for(int i = 0; i < blades; ++i) {
+        float a1 = float(i)     * radians(360.0) / float(blades);
+        float a2 = float(i + 1) * radians(360.0) / float(blades);
+        vec3 vert0 = vec3(0.0, 0.0, 0.0);
+        vec3 vert1 = vec3(cos(a1), sin(a1), 0.0);
+        vec3 vert2 = vec3(cos(a2), sin(a2), 0.0);
+
+        float t;
+        bool tri = IntersectTriangle_MT97(rayPosition, rayDirection, vert0, vert1 * radius, vert2 * radius, t);
+
+        if(t > 0.0 && t < dist) {
+            dist = t;
+            
+            hit = true;
+        }
+    }
+
+    return hit;
+}
+
 vec3 GenerateUnitVector(vec2 hash) {
     hash.x *= tau; hash.y = hash.y * 2.0 - 1.0;
     return vec3(vec2(sin(hash.x), cos(hash.x)) * sqrt(saturate(1.0 - hash.y * hash.y)), hash.y);
@@ -368,7 +542,7 @@ vec3 SpectrumToXYZExact_CIE2012(in float spectrum, in float w) {
 
     xyz = vec3(spectrum * 683.368) * xyz;
 
-    return xyz * float(441.0) / 113.042;
+    return xyz;
 }
 
 float InterpolateSpectrum(float wavelength, int lutRow) {
