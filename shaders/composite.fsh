@@ -261,8 +261,22 @@ void main() {
             vec3 viewDirection = vec3(rayDirection.x, rayDirection.y, rayDirection.z);
             viewPosition += lensPosition / 1000.0;
 
-            viewPosition = Rotate(viewPosition, vec3(0.0, 1.0, 0.0), radians(60.0));
-            viewDirection = Rotate(viewDirection, vec3(0.0, 1.0, 0.0), radians(60.0));
+            // start with camera forward vector
+            vec3 angle = gbufferModelViewInverse[2].xyz;
+            float tilt = degrees(asin(angle.y));
+
+            if (abs(angle.y) > 0.99) {
+                // use camera up vector when looking completely up/down
+                angle = -gbufferModelViewInverse[1].xyz * sign(angle.y);
+            }
+
+            float yaw = degrees(atan(angle.z, angle.x) + 180.0);
+
+            viewPosition = Rotate(viewPosition, vec3(1.0, 0.0, 0.0), radians(tilt));
+            viewDirection = Rotate(viewDirection, vec3(1.0, 0.0, 0.0), radians(tilt));
+
+            viewPosition = Rotate(viewPosition, vec3(0.0, 1.0, 0.0), radians(yaw));
+            viewDirection = Rotate(viewDirection, vec3(0.0, 1.0, 0.0), radians(yaw));
         #else
             lensFresnel = 1.0;
 
@@ -295,12 +309,11 @@ void main() {
     #ifndef ENABLE_CLOUDS
         cloudCoefficient = 0.0;
     #endif
-    float solarIrradiance = Plancks(5778.0, wavelength) * ConeAngleToSolidAngle(sunAngularRadius);
     vec4 baseAttenuationCoefficients = vec4(rayleighCoefficient, mieCoefficient, ozoneCoefficient, cloudCoefficient);
     #ifndef USE_RAY_MARCHED_ATMOSPHERE
-        float atmosphere = PathtraceAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength, lensFresnel, invalid);
+        float atmosphere = PathtraceAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, wavelength, lensFresnel, invalid);
     #else
-        float atmosphere = RaymarchAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
+        float atmosphere = RaymarchAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, wavelength);
     #endif
     vec3 simulated = SpectrumToXYZExact_CIE2012(atmosphere / wavelengthPDF, wavelength) * xyzToRGBMatrix_D65;
 

@@ -242,7 +242,7 @@
         return saturate(transmittance);
     }
 
-    float PathtraceAtmosphereScattering(in vec3 viewPosition, in vec3 viewVector, in vec3 lightVector, in vec4 baseAttenuationCoefficients, in float irradiance, in float wavelength, in float fresnel, in bool invalid) {
+    float PathtraceAtmosphereScattering(in vec3 viewPosition, in vec3 viewVector, in vec3 lightVector, in vec4 baseAttenuationCoefficients, in float wavelength, in float fresnel, in bool invalid) {
         int component;
 
         float estimate = 0.0;
@@ -256,6 +256,7 @@
         vec3 position = viewPosition;
         vec3 rayDirection = viewVector;
         vec3 sunDirection = GenerateConeVector(lightVector, RandNext2F(), sunAngularRadius);
+        float irradiance = PhysicalSun07(sunDirection, lightVector, wavelength, Plancks(5778.0, wavelength)) * ConeAngleToSolidAngle(sunAngularRadius);
 
         float throughput = fresnel;
         int bounces = 0;

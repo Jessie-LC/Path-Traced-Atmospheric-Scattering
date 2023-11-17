@@ -25,7 +25,7 @@
         return transmittance;
     }
 
-    float RaymarchAtmosphereScattering(in vec3 viewPosition, in vec3 viewVector, in vec3 lightVector, in vec4 baseAttenuationCoefficients, in float irradiance, in float wavelength) {
+    float RaymarchAtmosphereScattering(in vec3 viewPosition, in vec3 viewVector, in vec3 lightVector, in vec4 baseAttenuationCoefficients, in float wavelength) {
         vec2 atmosphereDists = RSI(viewPosition, viewVector, atmosphereRadius);
         vec2 planetDists = RSI(viewPosition, viewVector, atmosphereLowerLimit);
 
@@ -41,6 +41,7 @@
         vec3 scatteringCoefficients = vec3(baseAttenuationCoefficients.x, baseAttenuationCoefficients.y * aerosolScatteringAlbedo, 0.0);
 
         vec3 sunDirection = GenerateConeVector(lightVector, RandNext2F(), sunAngularRadius);
+        float irradiance = PhysicalSun07(sunDirection, lightVector, wavelength, Plancks(5778.0, wavelength)) * ConeAngleToSolidAngle(sunAngularRadius);
 
         #if PHASE_FUNCTION_RAYLEIGH == 0
             float phaseR = RayleighPhase(dot(viewVector, sunDirection), wavelength);

@@ -24,7 +24,7 @@ bool arCoating = false;
 
 const int num_interfaces = 5;
 
-const vec2 sensorMaxRadii = vec2(127.0, 101.0) / 2.0;
+const vec2 sensorMaxRadii = vec2(127.0, 101.0) / 3.0;
 
 void WideFoVLensInterfaces(in float wavelength, out LensInterface lens[5], out float N[6]) {
     lens = LensInterface[](
