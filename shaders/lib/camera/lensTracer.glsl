@@ -9,7 +9,7 @@ struct LensInterface {
 	float coatThickness; // Thickness of the thin film
 };
 
-#define IDEAL_FILM_IOR
+//#define IDEAL_FILM_IOR
 #define USE_POLYGONAL_APERTURE
 
 #define WIDE_FOV_LENS_APERTURE_SIZE 5.0 //[1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0]
@@ -24,7 +24,7 @@ bool arCoating = false;
 
 const int num_interfaces = 5;
 
-const vec2 sensorMaxRadii = vec2(127.0, 101.0) / 3.0;
+const vec2 sensorMaxRadii = vec2(127.0, 101.0) / 2.0;
 
 void WideFoVLensInterfaces(in float wavelength, out LensInterface lens[5], out float N[6]) {
     lens = LensInterface[](
@@ -33,7 +33,7 @@ void WideFoVLensInterfaces(in float wavelength, out LensInterface lens[5], out f
 
         LensInterface( 20.0, WIDE_FOV_LENS_APERTURE_SIZE, 2,1.0/0.0, arCoating, 650.0),
 
-        LensInterface( 36.0, 20.0, 1, -22.5, arCoating, 800.0),
+        LensInterface( 36.0, 20.0, 1, -22.5, arCoating, 400.0),
         LensInterface( 40.0, 20.0, 1, -21.0, arCoating, 300.0)
     );
 
@@ -136,7 +136,7 @@ vec3 GeneratePointOnFilm(in float sensorPosition) {
     vec2 pixel = vec2(gl_FragCoord.xy) + RandNext2F();
     vec2 sensorPoint = (vec2(viewWidth, viewHeight) - 2.0 * pixel)
                      * max(sensorMaxRadii.x / viewWidth, sensorMaxRadii.y / viewHeight);
-    return vec3(1.9 * sensorPoint, sensorPosition);
+    return vec3(2.0 * sensorPoint, sensorPosition);
 }
 
 vec3 SampleBackLensInterface(LensInterface lensInterface, vec2 xy) {
@@ -174,16 +174,16 @@ void CalculateLensSystem(out vec3 rayDirection, out vec3 rayPosition, out float 
     rayDirection = normalize(interfaceFromSensor);
 
     float interfaceArea = 2.0 * pi * (1.0 - cos(asin(backInterface.axisRadius / -backInterface.curvatureRadius))) * -backInterface.curvatureRadius * -backInterface.curvatureRadius;
-    float interfaceWeight = interfaceArea * dot(rayDirection, interfaceNormal) / dot(interfaceFromSensor, interfaceFromSensor);
+    float interfaceWeight = interfaceArea * dot(-rayDirection, interfaceNormal) / dot(interfaceFromSensor, interfaceFromSensor);
     float sensorWeight = dot(rayDirection, vec3(0.0, 0.0, -1.0));
-    throughput = sensorWeight * (interfaceArea / tau); //Not correct, but it isn't completely broken
+    throughput = sensorWeight * interfaceWeight;
 
     invalid = false;
     int bounces = 0;
     int interfaceIndex = num_interfaces - 1;
     int direction = -1;
     do {
-        if(bounces > num_interfaces * 8) break;
+        if(bounces > num_interfaces * 20) break;
         LensInterface interfaceData = interfaces[interfaceIndex];
 
         vec3 interfaceNormal;

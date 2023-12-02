@@ -17,10 +17,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+//#define CAMERA
+
 #define SHUTTER_SPEED 60.0 //[500.0 250.0 125.0 60.0 30.0 15.0 8.0]
 #define ISO 100.0 //[50.0 100.0 200.0 400.0 600.0 800.0 1200.0 1600.0 2400.0 3200.0]
-#define F_STOPS 16.0 //[1.4 2.0 2.8 4.0 5.6 8.0 11.0 16.0 22.0 32.0]
+#define F_STOPS 8.0 //[1.4 2.0 2.8 4.0 5.6 8.0 11.0 16.0 22.0 32.0]
 
+//#define ENABLE_OPEN_DRT
 //#define USE_SPECTRAL_CAMERA_TONEMAP
 #define CAMERA_RESPONSE 4 //[0 1 2 3 4]
 
@@ -56,6 +59,8 @@ layout(location = 0) in vec2 textureCoordinate;
 #else
     #include "/lib/tonemap/sampledResponseSpectral.glsl"
 #endif
+
+#include "/lib/tonemap/opendrt.glsl"
 
 const float K = 40.0;
 const float calibration = 2.0 * K / 100.0;
@@ -96,6 +101,9 @@ int BinarySearch(int lowIndex, int highIndex, float toFind) {
 void main() {
     float exposure = EV100ToExposure(ComputeEV100()) * rcp(pi);
     vec3 color = texture(colortex0, textureCoordinate).rgb * exposure;
+    #ifdef CAMERA
+        color = color * 800.0; //Gotta compensate for how dark things get
+    #endif
     #ifdef DISPLAY_PHASE_FUNCTIONS
         vec3 phaseXYZ = vec3(0.0);
         vec3 D65XYZ = vec3(0.0);
@@ -122,7 +130,13 @@ void main() {
             color = phaseRGB * pi;
         }
     #endif
-    finalColor = LinearToSrgb(CameraTonemap(color, ISO));
+    #ifdef ENABLE_OPEN_DRT
+        finalColor = transform(color.r, color.g, color.b);
+    #else
+        finalColor = LinearToSrgb(CameraTonemap(color, ISO));
+    #endif
+
+    //finalColor = textureCoordinate.x < texture(usStandardAtmosphere, textureCoordinate).w / 4.86e18 ? vec3(1.0) : vec3(0.0);
 
     finalColor += Bayer64(gl_FragCoord.xy) / 64.0;
 }

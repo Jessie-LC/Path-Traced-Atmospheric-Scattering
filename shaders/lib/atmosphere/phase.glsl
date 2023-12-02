@@ -59,8 +59,8 @@
         float cosTheta = cos(BinarySearchPhase(cdfTextureAerosol, wavelength, 0.0, pi, RandNextF()));
         return GenerateUnitVector(vec2(RandNextF(), cosTheta * 0.5 + 0.5));
     }
-    vec3 SampleLowAltitudeAerosolPhase(in float wavelength) {
-        float cosTheta = cos(BinarySearchPhase(cdfTextureAerosolLowAltitude, wavelength, 0.0, pi, RandNextF()));
+    vec3 SampleAerosolsPhase(in float wavelength) {
+        float cosTheta = cos(BinarySearchPhase(cdfTextureAerosols, wavelength, 0.0, pi, RandNextF()));
         return GenerateUnitVector(vec2(RandNextF(), cosTheta * 0.5 + 0.5));
     }
     vec3 SampleRainbowPhase(in float wavelength) {
@@ -78,8 +78,8 @@
     float AerosolPhase(in float cosTheta, in float wavelength) {
         return texture(phaseTextureAerosol, vec2(acos(cosTheta) / pi, (wavelength - 390.0) / 441.0)).r;
     }
-    float LowAltitudeAerosolPhase(in float cosTheta, in float wavelength) {
-        return texture(phaseTextureAerosolLowAltitude, vec2(acos(cosTheta) / pi, (wavelength - 390.0) / 441.0)).r;
+    float AerosolsPhase(in float cosTheta, in float wavelength) {
+        return texture(phaseTextureAerosols, vec2(acos(cosTheta) / pi, (wavelength - 390.0) / 441.0)).r;
     }
     float RainbowPhase(in float cosTheta, in float wavelength) {
         return texture(phaseTextureRainbow, vec2(acos(cosTheta) / pi, (wavelength - 390.0) / 441.0)).r;

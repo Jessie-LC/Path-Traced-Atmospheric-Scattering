@@ -157,7 +157,7 @@
             if (rand < ((rayleighAttenuation + mieAttenuation + ozoneAttenuation + cloudAttenuation) / maxAttenuationCoefficient)) {
                 float fraction = 0.0;
                 component = 0;
-                while (component < 3) {
+                while (component < 4) {
                     fraction += stepAttenuationCoeffcients[component];
                     if (rand * maxAttenuationCoefficient < fraction) { break; }
                     ++component;

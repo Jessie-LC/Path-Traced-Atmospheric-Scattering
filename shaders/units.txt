@@ -1,0 +1,5 @@
+Length/Height Units = Metres
+Radiance Units = Spectral Radiance
+Extinction Units = Inverse Metres
+Scattering Units = Inverse Metres
+Absorption Units = Inverse Metres

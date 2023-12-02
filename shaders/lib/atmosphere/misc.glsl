@@ -34,8 +34,8 @@
 
         return vec2(0.0, uvR);
     }
-    vec3 GetUS_StandardAtmosphereLUT(in float coreDistance) {
-        return texture(usStandardAtmosphere, US_StandardAtmosphereLookupUV(coreDistance)).rgb;
+    vec4 GetUS_StandardAtmosphereLUT(in float coreDistance) {
+        return texture(usStandardAtmosphere, US_StandardAtmosphereLookupUV(coreDistance));
     }
 
     vec3 CalculateAtmosphereDensity(in float coreDistance) {
@@ -50,7 +50,7 @@
             rm.y = AerosolDensityExp(coreDistance);
         #endif
 
-        float ozone = OzoneDensity(altitudeKm);
+        float ozone = GetUS_StandardAtmosphereLUT(coreDistance).w; //Number density
 
         return max(vec3(rm, ozone), 0.0);
     }
@@ -85,7 +85,7 @@
     float BetaO(float wavelength) {
         if(wavelength < 390.0 || wavelength > 830.0) return 0.0;
 
-        return 0.0001 * ozoneNumberDensity * ozoneCrossSection[int(wavelength - 390.0)];
+        return 0.0001 * OZONE_DENSITY_MULTIPLIER * ozoneCrossSection[int(wavelength - 390.0)];
     }
 
     float PreethamBetaO_Fit(in float wavelength) {
@@ -101,7 +101,7 @@
         float p9 = NormalDistribution(wavelength, 240.0, 20.0) * 13.0;
         float p10 = NormalDistribution(wavelength, 220.0, 10.0) * 2.0;
         float p11 = NormalDistribution(wavelength, 186.0, 8.0) * 1.3;
-        return 0.0001 * ozoneNumberDensity * ((p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10 + p11) / 1e20);
+        return 0.0001 * OZONE_DENSITY_MULTIPLIER * ((p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10 + p11) / 1e20);
     }
 
     int BinarySearch(int lowIndex, int highIndex, float toFind) {
@@ -132,7 +132,7 @@
         float xkn1 = preethamWavelengths[k - 1];
         float mk = CardinalSplineM(pk1, pkn1, xk1, xkn1);
         float mk1 = CardinalSplineM(pk2, pk, xk2, xk);
-        return 0.0001 * ozoneNumberDensity * (CubicHermiteSpline(pk, pk1, mk, mk1, wavelength, xk, xk1) / 2.5e21);
+        return clamp(0.0001 * OZONE_DENSITY_MULTIPLIER * (CubicHermiteSpline(pk, pk1, mk, mk1, wavelength, xk, xk1) / 2.5e21), 0.0, 5.0e-21);
     }
 
     #ifdef USER_DEFINED_COEFFICIENTS
@@ -155,7 +155,7 @@
 
             float spectrum;
             RGBToSpectrum(spectrum, wavelength, color.r, color.g, color.b, 0);
-            return 5e-21 * spectrum * ozoneNumberDensity * 0.0001;
+            return 5e-21 * OZONE_DENSITY_MULTIPLIER * spectrum * 0.0001;
         }
     #endif
 
@@ -204,7 +204,7 @@
         float normalizeHeight = height * (1.0 / cloudsThickness);
         float heightAlteration = HeightAlter(normalizeHeight, coverage);
         float densityAlteration = DensityAlter(normalizeHeight, coverage);
-            densityAlteration = sqrt(densityAlteration * 0.25);
+              densityAlteration = sqrt(densityAlteration * 0.25);
 
         float shapeNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 1.0).r;
               shapeNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 2.0).r * 0.8 + shapeNoise;
