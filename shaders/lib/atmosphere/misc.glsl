@@ -141,7 +141,7 @@
 
             float spectrum;
             RGBToSpectrum(spectrum, wavelength, color.r, color.g, color.b, 0);
-            return spectrum * 3e-6;
+            return spectrum * 3e-6 * square(TURBIDITY);
         }
         float BetaR_Arbitrary(in float wavelength) {
             vec3 color = vec3(RAYLEIGH_COLOR_R, RAYLEIGH_COLOR_G, RAYLEIGH_COLOR_B) / 255.0;
