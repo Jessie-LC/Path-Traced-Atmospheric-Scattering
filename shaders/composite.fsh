@@ -235,6 +235,23 @@ void main() {
              uv *= sensorSize / (2.0 * focalLength);
 
         vec3 viewDirection = normalize(vec3(uv.x, uv.y, -1.0));
+
+        // start with camera forward vector
+        vec3 angle = gbufferModelViewInverse[2].xyz;
+        float tilt = degrees(asin(angle.y));
+
+        if (abs(angle.y) > 0.99) {
+            // use camera up vector when looking completely up/down
+            angle = -gbufferModelViewInverse[1].xyz * sign(angle.y);
+        }
+
+        float yaw = degrees(atan(angle.z, angle.x) + 180.0);
+
+        viewPosition = Rotate(viewPosition, vec3(1.0, 0.0, 0.0), radians(tilt));
+        viewDirection = Rotate(viewDirection, vec3(1.0, 0.0, 0.0), radians(tilt));
+
+        viewPosition = Rotate(viewPosition, vec3(0.0, 1.0, 0.0), radians(yaw));
+        viewDirection = Rotate(viewDirection, vec3(0.0, 1.0, 0.0), radians(yaw));
     #endif
 
     #ifdef USER_DEFINED_COEFFICIENTS
@@ -273,7 +290,16 @@ void main() {
         moved = moved || cameraPosition    != previousCameraPosition;
         
         if(moved) {
-            frames = 1;
+            frames = 0;
+        }
+    #endif
+    #ifdef VIEW_FROM_SPACE
+        bool    moved  = gbufferProjection != gbufferPreviousProjection;
+        moved = moved || gbufferModelView  != gbufferPreviousModelView;
+        moved = moved || cameraPosition    != previousCameraPosition;
+        
+        if(moved) {
+            frames = 0;
         }
     #endif
     vec3 previousColor = texture(colortex0, textureCoordinate).rgb;
