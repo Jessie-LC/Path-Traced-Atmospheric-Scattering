@@ -7,3 +7,4 @@ shaders/textures/ignore/earthspec.png
 *.sqlite
 shaders/textures/ignore/earthmap4k.png
 shaders/lib/atmosphere/rainbow.glsl
+*.png
