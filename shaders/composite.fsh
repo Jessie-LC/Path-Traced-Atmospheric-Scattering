@@ -108,6 +108,9 @@ const bool colortex0Clear  = false;
 #include "/lib/universal/universal.glsl"
 #include "/lib/rng/pcg.glsl"
 
+#include "/lib/surface/fresnel.glsl"
+#include "/lib/surface/bsdf.glsl"
+
 #include "/lib/space/sun.glsl"
 #include "/lib/atmosphere/phase.glsl"
 #include "/lib/atmosphere/constants.glsl"
@@ -115,7 +118,6 @@ const bool colortex0Clear  = false;
 #include "/lib/atmosphere/pt.glsl"
 #include "/lib/atmosphere/raymarched.glsl"
 
-#include "/lib/surface/fresnel.glsl"
 #include "/lib/surface/glass.glsl"
 #include "/lib/camera/lensTracer.glsl"
 

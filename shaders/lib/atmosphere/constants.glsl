@@ -5,7 +5,7 @@
     const float planetRadius       = 6371e3;
     const float atmosphereHeight   = 400e3;
 
-    const vec2 scaleHeights = vec2(8.0, 1.2) * kilometer;
+    const vec2 scaleHeights = vec2(11.0, 8.0) * kilometer;
 
     const float aerosol_g = 0.76;
     const float meanAerosolParticleDiameter = 0.8;

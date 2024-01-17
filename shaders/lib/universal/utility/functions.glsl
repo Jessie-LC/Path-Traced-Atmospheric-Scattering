@@ -525,6 +525,17 @@ float NormalDistribution(in float x, in float mean, in float standardDeviation) 
     return (1.0 / (standardDeviation * sqrt(2.0 * pi))) * exp(-0.5 * square((x - mean) / standardDeviation));
 }
 
+float NormalDistributionPDF(in float x, in float sigma) {
+    return (1.0 / (sigma * sqrt(2.0 * pi))) * exp(-0.5 * square((x) / sigma));
+}
+
+vec2 NormalDistributionRand(in float sigma, in vec2 uv) {
+    float r     = sqrt(-2.0 * log(uv.x)) * sigma;
+    float theta = tau * uv.y;
+
+    return (r * vec2(cos(theta), sin(theta)));
+}
+
 uniform sampler2D CIELUT;
 uniform sampler2D colorToSpectrumLUT;
 

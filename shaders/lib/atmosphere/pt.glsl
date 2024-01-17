@@ -273,6 +273,7 @@
             throughput /= saturate(throughput);
 
             vec3 normal = normalize(position + rayDirection * pid.x);
+            mat3 tbnMatrix = GetRotationMatrix(vec3(0.0, 0.0, 1.0), normal);
 
             vec3 oldRayDirection = normalize(rayDirection);
 
@@ -392,19 +393,31 @@
                     break;
                 }
             } else if(planetIntersected) {
-                position = position + rayDirection * pid.x;
+                position = position + oldRayDirection * pid.x;
+
+                vec3 viewDirection   = oldRayDirection * tbnMatrix;
+                     viewDirection.z = sign(dot(oldRayDirection, tbnMatrix[2])) * abs(viewDirection.z);
 
                 {
                     float transmittance = EstimateTransmittance(position, sunDirection, baseAttenuationCoefficients);
 
-                    float bsdf = groundAlbedo * saturate(dot(sunDirection, normal)) / pi;
+                    float bsdf = EstimateOpaqueDielectric(
+                        viewDirection, 
+                        sunDirection * tbnMatrix,
+                        groundAlbedo,
+                        0.15
+                    );
 
-                    estimate += throughput * bsdf * irradiance * transmittance;
+                    estimate += throughput * bsdf * saturate(dot(normal, sunDirection)) * irradiance * transmittance;
                 }
 
                 {
-                    rayDirection = GenerateCosineVector(normal, RandNext2F());
-                    throughput *= groundAlbedo;
+                    rayDirection = tbnMatrix * SampleOpaqueDielectric(
+                        viewDirection,
+                        groundAlbedo,
+                        0.15,
+                        throughput
+                    );
 
                     if(dot(rayDirection, normal) < 0.0) {
                         break;
