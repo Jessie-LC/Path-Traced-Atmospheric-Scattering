@@ -147,6 +147,21 @@ vec4 linearstep(in vec4 x, float low, float high) {
     return saturate(mapped);
 }
 
+float CubicHermite00(float x) { return (1.0 + (2.0 * x)) * square(1.0 - x); }
+float CubicHermite01(float x) { return square(x) * (3.0 - (2.0 * x)); }
+float CubicHermite10(float x) { return x * square(1.0 - x); }
+float CubicHermite11(float x) { return square(x) * (x - 1.0); }
+float CubicHermiteSpline(in float pk, in float pk1, in float mk, in float mk1, in float x, in float xk, in float xk1) {
+    float t = (x - xk) / (xk1 - xk);
+    float scale = xk1 - xk;
+    return CubicHermite00(t) * pk + CubicHermite10(t) * scale * mk + CubicHermite01(t) * pk1 + CubicHermite11(t) * scale * mk1;
+}
+
+float CardinalSplineM(in float pk1, in float pkn1, in float xk1, in float xkn1) {
+    float c = 0.55;
+    return (1.0 - c) * ((pk1 - pkn1) / (xk1 - xkn1));
+}
+
 float AddUvMargin(float uv, int   resolution) { return uv * (1.0 - 1.0 / resolution) + (0.5 / resolution); }
 vec2  AddUvMargin(vec2 uv,  ivec2 resolution) { return uv * (1.0 - 1.0 / resolution) + (0.5 / resolution); }
 vec3  AddUvMargin(vec3 uv,  ivec3 resolution) { return uv * (1.0 - 1.0 / resolution) + (0.5 / resolution); }
