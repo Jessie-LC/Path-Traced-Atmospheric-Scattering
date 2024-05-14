@@ -26,9 +26,9 @@
     }
 
     vec2 US_StandardAtmosphereLookupUV(float R) {
-        const float H = sqrt(atmosphereRadiusSquared - atmosphereLowerLimitSquared);
+        const float H = sqrt(atmosphereRadiusSquared - (planetRadius * planetRadius));
 
-        float rho = sqrt(max(R * R - atmosphereLowerLimitSquared, 0.0));
+        float rho = sqrt(max(R * R - (planetRadius * planetRadius), 0.0));
 
         float uvR = AddUvMargin(rho / H, 512);
 

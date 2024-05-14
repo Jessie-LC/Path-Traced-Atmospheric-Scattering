@@ -4,3 +4,4 @@
 #include "utility/fastMath.glsl"
 #include "utility/converters.glsl"
 #include "utility/functions.glsl"
+#include "utility/text.glsl"

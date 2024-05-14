@@ -158,7 +158,7 @@ float CubicHermiteSpline(in float pk, in float pk1, in float mk, in float mk1, i
 }
 
 float CardinalSplineM(in float pk1, in float pkn1, in float xk1, in float xkn1) {
-    float c = 0.55;
+    float c = 0.5;
     return (1.0 - c) * ((pk1 - pkn1) / (xk1 - xkn1));
 }
 
@@ -353,8 +353,8 @@ vec3 GenerateConeVector(vec3 vector, vec2 xy, float angle) {
 
 float Plancks(float t, float lambda) {
     const float h = 6.62607015e-16;
-    const float c = 2.9e17;
-    const float k = 1.38e-5;
+    const float c = 2.99792458e17;
+    const float k = 1.380649e-5;
 
     float p1 = 2.0 * h * pow(c, 2.0) * pow(lambda, -5.0);
     float p2 = exp((h * c) / (lambda * k * t)) - 1.0;
@@ -362,11 +362,21 @@ float Plancks(float t, float lambda) {
     return p1 / p2;
 }
 
+float PlancksLawRadiance(float temperature) {
+	const float h = 6.62607015e-16;
+	const float c = 2.99792458e17;
+	const float k_B = 1.380649e-5;
+	const float constp = 2.0 * pow(3.1415926535 * k_B, 4.0) / (15.0 * c * c * h * h * h);
+	float temperatureSquared = temperature * temperature;
+	return constp * temperatureSquared * temperatureSquared;
+}
+
 float NormalDistribution(in float x, in float mean, in float standardDeviation) {
     return (1.0 / (standardDeviation * sqrt(2.0 * pi))) * exp(-0.5 * square((x - mean) / standardDeviation));
 }
 
 uniform sampler2D CIELUT;
+uniform sampler2D CIELUT_1931;
 uniform sampler2D colorToSpectrumLUT;
 
 vec3 SpectrumToXYZExact_CIE2012(in float spectrum, in float w) {
@@ -383,7 +393,23 @@ vec3 SpectrumToXYZExact_CIE2012(in float spectrum, in float w) {
 
     xyz = vec3(spectrum * 683.368) * xyz;
 
-    return xyz * float(441.0) / 113.042;
+    return xyz;
+}
+vec3 SpectrumToXYZExact_CIE1931(in float spectrum, in float w) {
+    float n = (w - 360.0);
+    int i = int(n);
+
+    int n0 = int(n);
+    int n1 = min(n0 + 1, 470);
+
+    vec3 cie0 = texelFetch(CIELUT_1931, ivec2(n0, 1), 0).xyz;
+    vec3 cie1 = texelFetch(CIELUT_1931, ivec2(n1, 1), 0).xyz;
+
+    vec3 xyz = mix(cie0, cie1, fract(n));
+
+    xyz = vec3(spectrum * 683.0) * xyz;
+
+    return xyz;
 }
 
 float InterpolateSpectrum(float wavelength, int lutRow) {

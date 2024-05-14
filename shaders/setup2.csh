@@ -16,14 +16,16 @@ uniform sampler3D noise3D;
 void US_StandardAtmosphereLookupUVReverse(vec2 coord, out float R) {
 	float uvR  = RemoveUvMargin(coord.y, 512);
 
-	const float H = sqrt(atmosphereRadiusSquared - atmosphereLowerLimitSquared);
+	const float H = sqrt(atmosphereRadiusSquared - (planetRadius * planetRadius));
 
 	float rho = H * uvR;
-	R = sqrt(rho * rho + atmosphereLowerLimitSquared);
+	R = sqrt(rho * rho + (planetRadius * planetRadius));
 }
 
-const float OzoneAltitude[38] = {
+const float OzoneAltitude[40] = {
     0.0,
+    500.0,
+    1000.0,
     2000.0,
     4000.0,
     6000.0,
@@ -63,8 +65,10 @@ const float OzoneAltitude[38] = {
     74000.0
 };
 
-const float US_OzoneNumberDensity[38] = {
-    7.4e17, //The US Standard Atmosphere model from 1976 doesn't have a sea level value for ozone number density, so I set it based on how graphs of the density look
+const float US_OzoneNumberDensity[40] = {
+    7.6e17, //The US Standard Atmosphere model from 1976 doesn't have a sea level value for ozone number density, so I set it based on how graphs of the density look. The following two density values are for more stable interpolation
+    7.4e17,
+    7.2e17,
     6.8e17,
     5.8e17,
     5.7e17,
@@ -121,16 +125,16 @@ int BinarySearch(int lowIndex, int highIndex, float toFind) {
 float O3_NumberDensity(in float altitude) {
 	float altitudeMin = altitude - 0.5, altitudeMax = altitude + 0.5;
 	float start = max(altitudeMin, OzoneAltitude[0].x);
-	float end = min(altitudeMax, OzoneAltitude[37].x);
+	float end = min(altitudeMax, OzoneAltitude[39].x);
 
-	int idx = int(max(distance(0.0, float(BinarySearch(0, 37, start))), 1.0) - 1.0);
+	int idx = int(max(distance(0.0, float(BinarySearch(0, 39, start))), 1.0) - 1.0);
 
 	if(end <= start) {
 		return 0.0;
 	}
 
 	float numberDensity = 0.0;
-	for(int entry = idx; entry < 38 && end >= OzoneAltitude[entry].x; ++entry) {
+	for(int entry = idx; entry < 40 && end >= OzoneAltitude[entry].x; ++entry) {
 		float a = OzoneAltitude[entry],
 		      b = OzoneAltitude[entry + 1],
 			  ca = max(a, start),

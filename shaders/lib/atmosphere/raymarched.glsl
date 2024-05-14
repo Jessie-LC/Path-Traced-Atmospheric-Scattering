@@ -1,14 +1,17 @@
 #if !defined LIB_ATMOSPHERE_RAYMARCHED
 #define LIB_ATMOSPHERE_RAYMARCHED
+    #define SCATTERING_STEPS 128 //[8 16 32 64 128 256 512]
+    #define TRANSMITTANCE_STEPS 64 //[8 16 32 64 128 256 512]
+
     float RaymarchAtmosphereTransmittance(in vec3 rayVector, in vec3 position, in vec4 baseAttenuationCoefficients) {
         float rayLength = dot(position, rayVector);
               rayLength = sqrt(rayLength * rayLength + square(atmosphereRadius) - dot(position, position)) - rayLength;
-        float stepSize  = rayLength / float(64);
+        float stepSize  = rayLength / float(TRANSMITTANCE_STEPS);
         vec3  increment = rayVector * stepSize;
-        position += increment * 0.5;
+        position += increment * RandNextF();
 
         vec3 thickness = vec3(0.0);
-        for(int i = 0; i < 64; ++i, position += increment) {
+        for(int i = 0; i < TRANSMITTANCE_STEPS; ++i, position += increment) {
             thickness += CalculateAtmosphereDensity(length(position));
         }
 
@@ -34,9 +37,9 @@
 
         vec2 sd = vec2((planetIntersected && planetDists.x < 0.0) ? planetDists.y : max(atmosphereDists.x, 0.0), (planetIntersected && planetDists.x > 0.0) ? planetDists.x : atmosphereDists.y);
 
-        float stepSize = length(sd.y - sd.x) / float(128);
+        float stepSize = length(sd.y - sd.x) / float(SCATTERING_STEPS);
         vec3 increment = viewVector * stepSize;
-        vec3 position = viewVector * sd.x + (increment * 0.5 + viewPosition);
+        vec3 position = viewVector * sd.x + (increment * RandNextF() + viewPosition);
 
         vec3 scatteringCoefficients = vec3(baseAttenuationCoefficients.x, baseAttenuationCoefficients.y * aerosolScatteringAlbedo, 0.0);
 
@@ -59,7 +62,7 @@
 
         float scattering = 0.0;
         float transmittance = 1.0;
-        for(int i = 0; i < 128; ++i, position += increment) {
+        for(int i = 0; i < SCATTERING_STEPS; ++i, position += increment) {
             vec3 density = CalculateAtmosphereDensity(length(position));
             if(density.x > 1e35) break;
             if(density.y > 1e35) break;

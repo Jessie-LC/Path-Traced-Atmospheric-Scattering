@@ -1,3 +1,9 @@
+option.CIE_VERSION=CIE Version
+value.CIE_VERSION.0=2012
+value.CIE_VERSION.1=1931
+option.MAXIMUM_SAMPLE_COUNT=Maximum Sample Count
+value.MAXIMUM_SAMPLE_COUNT.-1=Unlimited
+
 option.EXPONENTIAL_DENSITY=Use Exponential Density Functions
 option.PHASE_FUNCTION_RAYLEIGH=Phase Function Rayleigh
 value.PHASE_FUNCTION_RAYLEIGH.0=Rayleigh
@@ -26,6 +32,11 @@ option.AEROSOL_COLOR_B=Aerosol B
 option.OZONE_COLOR_R=Ozone R
 option.OZONE_COLOR_G=Ozone G
 option.OZONE_COLOR_B=Ozone B
+
+option.USE_RAYMARCHED_ATMOSPHERE=Use Non-PT Ray Marched Atmosphere
+option.SCATTERING_STEPS=Scattering Steps
+option.TRANSMITTANCE_STEPS=Transmittance Steps
+screen.Raymarched=Non-PT Atmosphere Settings
 
 option.VIEW_FROM_SPACE=View From Space
 option.PROJECTION=Projection

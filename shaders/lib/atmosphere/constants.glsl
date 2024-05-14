@@ -5,7 +5,7 @@
     const float planetRadius       = 6371e3;
     const float atmosphereHeight   = 400e3;
 
-    const vec2 scaleHeights = vec2(11.0, 8.0) * kilometer;
+    const vec2 scaleHeights = vec2(8.0, 1.4) * kilometer;
 
     const float aerosol_g = 0.76;
     const float meanAerosolParticleDiameter = 0.8;
@@ -17,7 +17,7 @@
     const float atmosphereLowerLimit = planetRadius;
     const float atmosphereLowerLimitSquared = atmosphereLowerLimit*atmosphereLowerLimit;
 
-    const float aerosolScatteringAlbedo = 0.99; //Clean aerosols scatter around 99.9% of light, however dirty aerosols scatter around 90%
+    const float aerosolScatteringAlbedo = 0.90; //Clean aerosols scatter around 99.9% of light, however dirty aerosols scatter around 90%
     const float mistScatteringAlbedo = 0.99;
     const float cloudScatteringAlbedo = 0.99;
 

@@ -46,6 +46,9 @@ uniform sampler2D cameraResponseLUT;
 
 uniform sampler2D usStandardAtmosphere;
 
+uniform float viewWidth, viewHeight;
+uniform int hideGUI;
+
 layout(location = 0) in vec2 textureCoordinate;
 
 #include "/lib/universal/universal.glsl"
@@ -57,7 +60,7 @@ layout(location = 0) in vec2 textureCoordinate;
     #include "/lib/tonemap/sampledResponseSpectral.glsl"
 #endif
 
-const float K = 40.0;
+const float K = 16.0;
 const float calibration = 2.0 * K / 100.0;
 float ComputeEV100() {
     return log2(square(F_STOPS) / (1.0 / SHUTTER_SPEED) * 100.0 / ISO);
@@ -102,7 +105,14 @@ void main() {
     #endif
     finalColor = LinearToSrgb(CameraTonemap(color, ISO));
 
-    //finalColor = textureCoordinate.x > texture(usStandardAtmosphere, textureCoordinate).x / 1.0 ? vec3(0.0) : vec3(texture(usStandardAtmosphere, textureCoordinate).x / 1.0);
+    if(hideGUI == 0) {
+        beginText(ivec2(gl_FragCoord.xy / 5), ivec2(0, viewHeight / 5 - 5));
+        printString((_S,_a,_m,_p,_l,_e,_s,_space));
+        printInt(int(texelFetch(colortex0, ivec2(viewWidth / 2, viewHeight / 2), 0).a));
+        endText(finalColor);
+    }
+
+    //finalColor = textureCoordinate.x > texture(usStandardAtmosphere, textureCoordinate).w / 4.86e18 ? vec3(0.0) : vec3(1.0);
     //finalColor = texture(usStandardAtmosphere, textureCoordinate).xyz / vec3(1.0, 101325.0, 288.15);
 
     finalColor += Bayer64(gl_FragCoord.xy) / 64.0;

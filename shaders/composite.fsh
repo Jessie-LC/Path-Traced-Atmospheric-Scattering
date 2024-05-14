@@ -17,6 +17,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#define CIE_VERSION 0 //[0 1]
+#define MAXIMUM_SAMPLE_COUNT -1 //[-1 100 200 300 400 500 1000 2000 3000 4000 5000 7000 8000 9000 10000 15000 20000] Set to -1 for unlimited sample count
+
+//#define USE_RAYMARCHED_ATMOSPHERE
+
 //#define ENABLE_CLOUDS //Very slow
 
 //#define EXPONENTIAL_DENSITY //Enables an approximate version of the atmosphere density functions. This also changes the aerosol coefficient function to the Preetham one.
@@ -112,7 +117,7 @@ const bool colortex0Clear  = false;
 const float sensorWidth = 1e-3 * 36.0;
 const float sensorHeight = 1e-3 * 27.0;
 
-float BinarySearch_CIE(float lowBound, float highBound, float toFind, in vec3 weights) {
+float BinarySearch_CIE2012(float lowBound, float highBound, float toFind, in vec3 weights) {
     float midIndex = (lowBound + highBound) / 2.0;
 
     int lookupRes = textureSize(CIELUT, 0).x * 2;
@@ -121,6 +126,30 @@ float BinarySearch_CIE(float lowBound, float highBound, float toFind, in vec3 we
         float coordTweaked = (coordinate * float(lookupRes - 1) + 0.5) / lookupRes;
 
         float value = saturate(weights.x * texture(CIELUT, vec2(coordTweaked, 0)).x + weights.y * texture(CIELUT, vec2(coordTweaked, 0)).y + weights.z * texture(CIELUT, vec2(coordTweaked, 0)).z); //The CDF value should never go above 1.
+
+        if (value < toFind) {
+            lowBound = midIndex;
+        }
+        else if (value > toFind) {
+            highBound = midIndex;
+        }
+        else {
+            return midIndex;
+        }
+
+        midIndex = (lowBound + highBound) / 2.0;
+    }
+    return midIndex;
+}
+float BinarySearch_CIE1931(float lowBound, float highBound, float toFind, in vec3 weights) {
+    float midIndex = (lowBound + highBound) / 2.0;
+
+    int lookupRes = textureSize(CIELUT_1931, 0).x * 2;
+    for (int x = 0; x < log2(lookupRes); ++x) {
+        float coordinate = midIndex;
+        float coordTweaked = (coordinate * float(lookupRes - 1) + 0.5) / lookupRes;
+
+        float value = saturate(weights.x * texture(CIELUT_1931, vec2(coordTweaked, 0)).x + weights.y * texture(CIELUT_1931, vec2(coordTweaked, 0)).y + weights.z * texture(CIELUT_1931, vec2(coordTweaked, 0)).z); //The CDF value should never go above 1.
 
         if (value < toFind) {
             lowBound = midIndex;
@@ -173,8 +202,19 @@ vec3 EquirectangularProjection(in vec2 coord) {
 }
 
 void main() {
+    int samples = int(texture(colortex0, textureCoordinate).a);
+    #if MAXIMUM_SAMPLE_COUNT != -1
+        if(samples >= MAXIMUM_SAMPLE_COUNT) {
+            samples = MAXIMUM_SAMPLE_COUNT;
+            vec3 previousColor = texture(colortex0, textureCoordinate).rgb;
+            simulationOutput.rgb = previousColor;
+            simulationOutput.a   = samples;
+            return;
+        }
+    #endif
+
 	uint seed = uint(gl_FragCoord.x * viewHeight + gl_FragCoord.y);
-	     seed = seed * 720720u + uint(frameCounter);
+	     seed = seed * 720720u + uint(samples);
 
     InitRand(seed);
 
@@ -199,10 +239,19 @@ void main() {
     }
     history = max(history, 0.0);
     vec3 cmfWeights = mix(saturate(history / dot(vec3(1.0), history)), vec3(1.0 / 3.0), history == vec3(0.0) ? 1.0 : 0.2);
-    float wavelength = (441.0 * BinarySearch_CIE(0.0, 1.0, RandNextF(), cmfWeights)) + 390.0;
+    #if CIE_VERSION == 0
+        float wavelength = (441.0 * BinarySearch_CIE2012(0.0, 1.0, RandNextF(), cmfWeights)) + 390.0;
+    #elif CIE_VERSION == 1
+        float wavelength = (471.0 * BinarySearch_CIE1931(0.0, 1.0, RandNextF(), cmfWeights)) + 360.0;
+    #endif
 
-    vec3 cie = texture(CIELUT, vec2(int(wavelength - 390.0) / 441.0, 1)).xyz;
-    float wavelengthPDF = cmfWeights.x * (cie.x / 113.042) + cmfWeights.y * (cie.y / 113.042) + cmfWeights.z * (cie.z / 113.042);
+    #if CIE_VERSION == 0
+        vec3 cie = texture(CIELUT, vec2(int(wavelength - 390.0) / 441.0, 1)).xyz;
+        float wavelengthPDF = cmfWeights.x * (cie.x / 113.042) + cmfWeights.y * (cie.y / 113.042) + cmfWeights.z * (cie.z / 113.042);
+    #elif CIE_VERSION == 1
+        vec3 cie = texture(CIELUT_1931, vec2(int(wavelength - 360.0) / 471.0, 1)).xyz;
+        float wavelengthPDF = cmfWeights.x * (cie.x / 106.857) + cmfWeights.y * (cie.y / 106.857) + cmfWeights.z * (cie.z / 106.857);
+    #endif
 
     #ifndef VIEW_FROM_SPACE
         vec3 viewPosition = vec3(0.0, planetRadius + 1.0, 0.0);
@@ -222,11 +271,11 @@ void main() {
             vec2 uv  = gl_FragCoord.xy * rcp(viewResolution.xy);
                  uv += aa;
 
-            float fov = tan(radians(50.0));
+            float fov = tan(radians(45.0));
             vec3 viewDirection = FisheyeProjection(uv.x, uv.y, fov);
 
             if(viewDirection == vec3(-1.0)) {
-                discard;
+                //discard;
             }
         #endif
     #else
@@ -273,10 +322,18 @@ void main() {
     #ifndef ENABLE_CLOUDS
         cloudCoefficient = 0.0;
     #endif
-    float solarIrradiance = Plancks(5778.0, wavelength) * ConeAngleToSolidAngle(sunAngularRadius);
+    float solarIrradiance = solarIrradiance[int(wavelength - 390.0)];
     vec4 baseAttenuationCoefficients = vec4(rayleighCoefficient, mieCoefficient, ozoneCoefficient, cloudCoefficient);
-    float atmosphere = PathtraceAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
-    vec3 simulated = SpectrumToXYZExact_CIE2012(atmosphere / wavelengthPDF, wavelength) * xyzToRGBMatrix_D65;
+    #ifndef USE_RAYMARCHED_ATMOSPHERE
+        float atmosphere = PathtraceAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
+    #else
+        float atmosphere = RaymarchAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
+    #endif
+    #if CIE_VERSION == 0
+        vec3 simulated = SpectrumToXYZExact_CIE2012(atmosphere / wavelengthPDF, wavelength) * xyzToRGBMatrix_D65;
+    #elif CIE_VERSION == 1
+        vec3 simulated = SpectrumToXYZExact_CIE1931(atmosphere / wavelengthPDF, wavelength) * xyzToRGBMatrix_D65;
+    #endif
 
     if(any(isnan(simulated))) {
         simulated = vec3(0.0);
@@ -285,26 +342,28 @@ void main() {
         simulated = vec3(3.4e38);
     }
 
-    int frames = int(texture(colortex0, textureCoordinate).a);
-    #if PROJECTION == 0
-        bool    moved  = gbufferProjection != gbufferPreviousProjection;
-        moved = moved || gbufferModelView  != gbufferPreviousModelView;
-        moved = moved || cameraPosition    != previousCameraPosition;
-        
-        if(moved) {
-            frames = 0;
-        }
-    #endif
     #ifdef VIEW_FROM_SPACE
         bool    moved  = gbufferProjection != gbufferPreviousProjection;
         moved = moved || gbufferModelView  != gbufferPreviousModelView;
         moved = moved || cameraPosition    != previousCameraPosition;
         
         if(moved) {
-            frames = 0;
+            samples = 0;
         }
     #endif
+    #ifndef VIEW_FROM_SPACE
+        #if PROJECTION == 0
+            bool    moved  = gbufferProjection != gbufferPreviousProjection;
+            moved = moved || gbufferModelView  != gbufferPreviousModelView;
+            moved = moved || cameraPosition    != previousCameraPosition;
+            
+            if(moved) {
+                samples = 0;
+            }
+        #endif
+    #endif
+
     vec3 previousColor = texture(colortex0, textureCoordinate).rgb;
-    simulationOutput.rgb = mix(previousColor, simulated, 1.0 / (++frames));
-    simulationOutput.a   = frames;
+    simulationOutput.rgb = mix(previousColor, simulated, 1.0 / (++samples));
+    simulationOutput.a   = samples;
 }

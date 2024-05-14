@@ -136,30 +136,28 @@
     }
 
     float DrainePhase(in float u, in float g, in float a) {
-        return ((1 - g*g)*(1 + a*u*u))/(4.*(1 + (a*(1 + 2*g*g))/3.) * pi * pow(1 + g*g - 2*g*u,1.5));
+        float p1 = (1.0 - pow(g, 2.0)) / pow(1.0 + pow(g, 2.0) - 2.0 * g * u, 3.0 / 2.0);
+        float p2 = (1.0 + a * pow(u, 2.0)) / (1.0 + a * (1.0 + 2.0 * pow(g, 2.0)) / 3.0);
+        return (1.0 / (4.0 * pi)) * p1 * p2;
     }
-    float SampleDrainePhase(in float xi, in float g, in float a)
-    {
-        const float g2 = g * g;
-        const float g3 = g * g2;
-        const float g4 = g2 * g2;
-        const float g6 = g2 * g4;
-        const float pgp1_2 = (1 + g2) * (1 + g2);
-        const float T1 = (-1 + g2) * (4 * g2 + a * pgp1_2);
-        const float T1a = -a + a * g4;
-        const float T1a3 = T1a * T1a * T1a;
-        const float T2 = -1296 * (-1 + g2) * (a - a * g2) * (T1a) * (4 * g2 + a * pgp1_2);
-        const float T3 = 3 * g2 * (1 + g * (-1 + 2 * xi)) + a * (2 + g2 + g3 * (1 + 2 * g2) * (-1 + 2 * xi));
-        const float T4a = 432 * T1a3 + T2 + 432 * (a - a * g2) * T3 * T3;
-        const float T4b = -144 * a * g2 + 288 * a * g4 - 144 * a * g6;
-        const float T4b3 = T4b * T4b * T4b;
-        const float T4 = T4a + sqrt(-4 * T4b3 + T4a * T4a);
-        const float T4p3 = pow(T4, 1.0 / 3.0);
-        const float T6 = (2 * T1a + (48 * pow(2, 1.0 / 3.0) *
-            (-(a * g2) + 2 * a * g4 - a * g6)) / T4p3 + T4p3 / (3. * pow(2, 1.0 / 3.0))) / (a - a * g2);
-        const float T5 = 6 * (1 + g2) + T6;
-        return (1 + g2 - pow(-0.5 * sqrt(T5) + sqrt(6 * (1 + g2) - (8 * T3) / (a * (-1 + g2) * sqrt(T5)) - T6) / 2., 2)) / (2. * g);
+    float SampleDrainePhase(in float xi, in float g, in float a) {
+        float g2 = pow(g, 2.0);
+        float g3 = g * g2;
+        float g4 = g2 * g2;
+        float g6 = g2 * g4;
+        float T0 = a - a * g2;
+        float T1 = a * g4 - a;
+        float T2 = -3.0 * (4.0 * (g4 - g2) + T1 * (1.0 + g2));
+        float T3 = g * (2.0 * xi - 1.0);
+        float T4 = 3.0 * g2 * (1.0 + T3) + a * (2.0 + g2 * (1.0 + (1.0 + 2.0 * g2) * T3));
+        float T5 = T0 * (T1 * T2 + pow(T4, 2.0)) + pow(T1, 3.0);
+        float T6 = T0 * 4.0 * (g4 - g2);
+        float T7 = pow(T5 + sqrt(pow(T5, 2.0) - pow(T6, 3.0)), 1.0/3.0);
+        float T8 = 2.0 * ((T1 + T6 / T7 + T7) / T0);
+        float T9 = sqrt(6.0 * (1.0 + g2) + T8);
+        return g / 2.0 + ((1.0 / (2.0 * g)) - (1.0 / (8.0 * g)) * pow(sqrt(6.0 * (1.0 + g2) - T8 + 8.0 * T4 / (T0 * T9)) - T9, 2.0));
     }
+
     vec3 SampleDrainePhase(in float g, in float a) {
         float cosTheta = SampleDrainePhase(RandNextF(), g, a);
         return GenerateUnitVector(vec2(RandNextF(), cosTheta * 0.5 + 0.5));
