@@ -12,7 +12,11 @@
 
         vec3 thickness = vec3(0.0);
         for(int i = 0; i < TRANSMITTANCE_STEPS; ++i, position += increment) {
-            thickness += CalculateAtmosphereDensity(length(position));
+            vec3 density = CalculateAtmosphereDensity(length(position));
+            if(density.x > 1e35) break;
+            if(density.y > 1e35) break;
+            if(density.z > 1e35) break;
+            thickness += density;
         }
 
         float opticalDepth = (baseAttenuationCoefficients.x * stepSize * thickness.x) + (baseAttenuationCoefficients.y * stepSize * thickness.y) + (baseAttenuationCoefficients.z * stepSize * thickness.z);
@@ -76,8 +80,14 @@
             float stepTransmittance = saturate(exp(-stepOpticalDepth));
             float visibleScattering = transmittance * saturate((stepTransmittance - 1.0) / -stepOpticalDepth);
 
-            scattering += (scatteringCoefficients.x * airMass.x * phaseR + scatteringCoefficients.y * airMass.y * phaseM) * visibleScattering * RaymarchAtmosphereTransmittance(lightVector, position, baseAttenuationCoefficients);
+            float shadow = float(RSI(position, lightVector, planetRadius).x < 0.0);
+            scattering += (scatteringCoefficients.x * airMass.x * phaseR + scatteringCoefficients.y * airMass.y * phaseM) * visibleScattering * RaymarchAtmosphereTransmittance(lightVector, position, baseAttenuationCoefficients) * shadow;
             transmittance *= stepTransmittance;
+
+            if(RSI(position, viewVector, atmosphereLowerLimit).x <= 0.0) {
+                //Break out of the loop early if this ray intersects the lower sphere
+                break;
+            }
         }
 
         if(isnan(scattering)) {
