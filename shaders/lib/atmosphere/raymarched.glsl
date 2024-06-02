@@ -33,13 +33,13 @@
     }
 
     float RaymarchAtmosphereScattering(in vec3 viewPosition, in vec3 viewVector, in vec3 lightVector, in vec4 baseAttenuationCoefficients, in float irradiance, in float wavelength) {
-        vec2 atmosphereDists = RSI(viewPosition, viewVector, atmosphereRadius);
-        vec2 planetDists = RSI(viewPosition, viewVector, atmosphereLowerLimit);
+        vec2 upperSphere = RSI(viewPosition, viewVector, atmosphereRadius);
+        vec2 lowerSphere = RSI(viewPosition, viewVector, atmosphereLowerLimit);
 
-        bool planetIntersected = planetDists.y >= 0.0;
-        bool atmosphereIntersected = atmosphereDists.y >= 0.0;
+        bool lowerSphereIntersected = lowerSphere.y >= 0.0;
+        bool upperSphereIntersected = upperSphere.y >= 0.0;
 
-        vec2 sd = vec2((planetIntersected && planetDists.x < 0.0) ? planetDists.y : max(atmosphereDists.x, 0.0), (planetIntersected && planetDists.x > 0.0) ? planetDists.x : atmosphereDists.y);
+        vec2 sd = vec2((lowerSphereIntersected && lowerSphere.x < 0.0) ? lowerSphere.y : max(upperSphere.x, 0.0), (lowerSphereIntersected && lowerSphere.x > 0.0) ? lowerSphere.x : upperSphere.y);
 
         float stepSize = length(sd.y - sd.x) / float(SCATTERING_STEPS);
         vec3 increment = viewVector * stepSize;

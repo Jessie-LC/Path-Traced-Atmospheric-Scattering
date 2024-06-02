@@ -9,6 +9,7 @@
 
     const float aerosol_g = 0.76;
     const float meanAerosolParticleDiameter = 0.8;
+    const float meanCloudParticleDiameter = 70.0 * 1e-3;
 
     const vec2 inverseScaleHeights   = 1.0 / (scaleHeights);
     const vec2 scaledPlanetRadius    = planetRadius * inverseScaleHeights;
@@ -21,12 +22,14 @@
     const float mistScatteringAlbedo = 0.99;
     const float cloudScatteringAlbedo = 0.99;
 
-    const float cloudsAltitude = 600.0;
-    const float cloudsThickness = cloudsAltitude * 0.8;
+    const float cloudsAltitude = 80000.0;
+    const float cloudsThickness = cloudsAltitude * 0.001;
     const float cloudsMaxAltitude = cloudsAltitude + cloudsThickness;
-    const float globalCoverage = 0.7;
+    const float globalCoverage = 0.6;
     const float cloudAnvilAmount = 0.0;
 
     const float rAir = 287.053;
     const float gammaAir = 1.4;
+
+    const float g = 9.80665;
 #endif

@@ -185,19 +185,71 @@
         return returnValue;
     }
 
+    float GerstnerWaves(vec2 coord, float time, float waveAmplitude, float waveLength, vec2 waveDirection) {
+        float k = (3.14159 * 2.0) / waveLength;
+        float w = sqrt(g * k);
+        float x = w * time - k * dot(waveDirection, coord);
+        float wave = sin(x) * 0.5 + 0.5;
+        float h = waveAmplitude * wave;
+        return h;
+    }
+
+    vec2 GerstnerWavesDisp(vec2 coord, float time, float waveAmplitude, float waveLength, vec2 waveDirection) {    
+        float k = (3.14159 * 2.0) / waveLength;
+        float w = sqrt(g * k);
+        float x = w - k * dot(waveDirection, coord);
+        float wave = cos(x) * 0.5 + 0.5;
+        float h = waveAmplitude * wave;
+        return waveDirection * h;
+    }
+
+    vec3 WaveDisplacement(in vec2 position) {
+        vec2 waveDirection = vec2(0.2, 1.0);
+        float waveLength = 4.0;
+        float waveAmplitude = 0.04;
+        float waveSteepness = 10.0;
+        float a = 3.14159;
+
+        float noiseStrength = 0.1;
+        vec2 noise = vec2(0.0);
+        vec2 positionNoise = (position * 0.05);
+        float height = 0.0;
+        float dispX = 0.0;
+        float dispZ = 0.0;
+        for(int i = 0; i < 32; ++i) {
+            a *= radians(float(i + 1));
+
+            noise += texture(noisetex, positionNoise).rg * 2.0 - 1.0;
+
+            height += -GerstnerWaves(position + noiseStrength * noise * sqrt(waveLength), 1.0, waveAmplitude, waveLength, normalize(waveDirection));
+            dispX += GerstnerWavesDisp(position + noiseStrength * noise * sqrt(waveLength), 1.0, waveAmplitude, waveLength, normalize(waveDirection)).x * waveSteepness;
+            dispZ += GerstnerWavesDisp(position + noiseStrength * noise * sqrt(waveLength), 1.0, waveAmplitude, waveLength, normalize(waveDirection)).y * waveSteepness;
+
+            waveLength *= 0.65;
+            waveAmplitude *= 0.60;
+            waveSteepness *= 0.9;
+            waveDirection *= Rotate(a);
+            positionNoise *= 0.8;
+            noiseStrength *= 0.5;
+        }
+        return vec3(dispX, height, dispZ) * 10.0;
+    }
+
     float CalculateCloudShape(in vec3 position) {
         if(length(position) - planetRadius > cloudsMaxAltitude || length(position) - planetRadius < cloudsAltitude) return 0.0;
 
         position += vec3(1500.0, 0.0, 0.0);
 
-        vec3 cloudPosition = position / (cloudsThickness*64.0);
+        vec3 cloudPosition = position / (cloudsThickness*512.0);
+
+        cloudPosition += WaveDisplacement(cloudPosition.xz * 1.0);
 
         float coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.1).r;
               coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.3).r * 0.8 + coverageNoise;
               coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.4).r * 0.6 + coverageNoise;
               coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.5).r * 0.4 + coverageNoise;
 
-        float localizedCoverage = coverageNoise * 3.0 - 2.0;
+        float localizedCoverage = coverageNoise * 3.0 - 1.8;
         float coverage = globalCoverage * localizedCoverage;
 
         float height = (length(position) - planetRadius) - cloudsAltitude;

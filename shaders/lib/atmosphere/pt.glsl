@@ -333,7 +333,11 @@
                             break;
                         }
                         case 3: {
-                            phase = CloudPhase(dot(rayDirection, sunDirection), wavelength);
+                            #if PHASE_FUNCTION_CLOUD == 0
+                                phase = CloudPhase(dot(rayDirection, sunDirection), wavelength);
+                            #elif PHASE_FUNCTION_CLOUD == 1
+                                phase = ApproximateMiePhase(dot(rayDirection, sunDirection), meanCloudParticleDiameter);
+                            #endif
                             break;
                         }
                     }
@@ -380,9 +384,15 @@
                             break; 
                         }
                         case 3: { 
-                            rayDirection = Rotate(SampleCloudPhase(wavelength), vec3(0.0, 0.0, 1.0), rayDirection);
-                            throughput *= CloudPhase(dot(oldRayDirection, rayDirection), wavelength) / 
-                                          CloudPhase(dot(oldRayDirection, rayDirection), wavelength);
+                            #if PHASE_FUNCTION_CLOUD == 0
+                                rayDirection = Rotate(SampleCloudPhase(wavelength), vec3(0.0, 0.0, 1.0), rayDirection);
+                                throughput *= CloudPhase(dot(oldRayDirection, rayDirection), wavelength) / 
+                                              CloudPhase(dot(oldRayDirection, rayDirection), wavelength);
+                            #elif PHASE_FUNCTION_CLOUD == 1
+                                rayDirection = Rotate(SampleApproximateMiePhase(meanCloudParticleDiameter), vec3(0.0, 0.0, 1.0), rayDirection);
+                                throughput *= ApproximateMiePhase(dot(oldRayDirection, rayDirection), meanCloudParticleDiameter) / 
+                                              ApproximateMiePhase(dot(oldRayDirection, rayDirection), meanCloudParticleDiameter);
+                            #endif
                             break; 
                         }
                     }
@@ -409,7 +419,7 @@
                     }
                 }
             } else {
-                if(bounces < 1) estimate += PhysicalSun(rayDirection, lightVector, wavelength, Plancks(5778.0, wavelength)) * throughput;
+                if(bounces < 1) estimate += PhysicalSun(rayDirection, lightVector, wavelength, irradiance / ConeAngleToSolidAngle(sunAngularRadius)) * throughput;
                 break;
             }
 

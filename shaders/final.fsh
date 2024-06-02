@@ -46,6 +46,7 @@ uniform sampler2D cameraResponseLUT;
 
 uniform sampler2D usStandardAtmosphere;
 
+uniform float frameTime;
 uniform float viewWidth, viewHeight;
 uniform int hideGUI;
 
@@ -107,8 +108,18 @@ void main() {
 
     if(hideGUI == 0) {
         beginText(ivec2(gl_FragCoord.xy / 5), ivec2(0, viewHeight / 5 - 5));
-        printString((_S,_a,_m,_p,_l,_e,_s,_space));
+        printString((_S,_a,_m,_p,_l,_e,_s,_colon,_space));
         printInt(int(texelFetch(colortex0, ivec2(viewWidth / 2, viewHeight / 2), 0).a));
+        endText(finalColor);
+
+        beginText(ivec2(gl_FragCoord.xy / 5), ivec2(0, viewHeight / 5 - 15));
+        printString((_F,_P,_S,_colon,_space));
+        printInt(int(1.0 / frameTime));
+        endText(finalColor);
+    
+        beginText(ivec2(gl_FragCoord.xy / 5), ivec2(0, viewHeight / 5 - 25));
+        printString((_S,_e,_c,_o,_n,_d,_s,_colon,_space));
+        printInt(int(texelFetch(colortex0, ivec2(viewWidth / 2, viewHeight / 2), 0).a / (1.0 / frameTime)));
         endText(finalColor);
     }
 
