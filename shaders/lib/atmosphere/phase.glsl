@@ -4,7 +4,7 @@
         float midIndex = (lowBound + highBound) / 2.0;
 
         int lookupRes = textureSize(cdfTexture, 0);
-        for (int x = 0; x < 12; ++x) {
+        for (int x = 0; x < log2(lookupRes); ++x) {
             float coordinate = midIndex / pi;
             float coordTweaked = (coordinate * float(lookupRes - 1) + 0.5) / float(lookupRes);
 
@@ -29,7 +29,7 @@
         float midIndex = (lowBound + highBound) / 2.0;
 
         int lookupRes = textureSize(cdfTexture, 0).x;
-        for (int x = 0; x < 12; ++x) {
+        for (int x = 0; x < log2(lookupRes); ++x) {
             float coordinate = midIndex / pi;
             float coordTweaked = (coordinate * float(lookupRes - 1) + 0.5) / float(lookupRes);
 

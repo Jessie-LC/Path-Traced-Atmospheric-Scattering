@@ -1,7 +1,7 @@
 #version 450 compatibility
 
 /*
-    Copyright (C) 2023  Jessie
+    Copyright (C) 2023-2025  Jessie
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -1,7 +1,7 @@
 #version 450
 
 /*
-    Copyright (C) 2023  Jessie
+    Copyright (C) 2023-2025  Jessie
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 //#define EXPONENTIAL_DENSITY //Enables an approximate version of the atmosphere density functions. This also changes the aerosol coefficient function to the Preetham one.
 
 #define PHASE_FUNCTION_RAYLEIGH 0 //[0 1]
-#define PHASE_FUNCTION_AEROSOL 0 //[0 1 2 3]
+#define PHASE_FUNCTION_AEROSOL 0 //[0 1 2 3 4]
 #define PHASE_FUNCTION_CLOUD 0 //[0 1]
 
 #define TURBIDITY 1 //[1 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3 3.1 3.2 3.3 3.4 3.5 3.6 3.7 3.8 3.9 4 4.1 4.2 4.3 4.4 4.5 4.6 4.7 4.8 4.9 5 5.1 5.2 5.3 5.4 5.5 5.6 5.7 5.8 5.9 6 6.1 6.2 6.3 6.4 6.5 6.6 6.7 6.8 6.9 7 7.1 7.2 7.3 7.4 7.5 7.6 7.7 7.7 7.8 7.9 8 8.2 8.3 8.4 8.5 8.6 8.7 8.8 8.9 9 9.1 9.2 9.3 9.4 9.5 9.6 9.7 9.8 9.9 10 10.1 10.2 10.3 10.4 10.5 10.6 10.7 10.8 10.9 11 11.1 11.2 11.3 11.4 11.5 11.6 11.7 11.8 11.9 12 12.1 12.2 12.3 12.4 12.5 12.6 12.7 12.8 12.9 13 13.1 13.2 13.3 13.4 13.5 13.6 13.7 13.8 13.9 14 14.1 14.2 14.3 14.4 14.5 14.6 14.7 14.8 14.9 15]
@@ -47,7 +47,7 @@
 #define GROUND_ALBEDO_B 79 //[0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255]
 
 #define OZONE_MODE 0 //[0 1 2]
-#define OZONE_DENSITY_MULTIPLIER 0.6 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0 3.1 3.2 3.3 3.4 3.5 3.6 3.7 3.8 3.9 4.0 4.1 4.2 4.3 4.4 4.5 4.6 4.7 4.8 4.9 5.0 5.1 5.2 5.3 5.4 5.5 5.6 5.7 5.8 5.9 6.0 6.1 6.2 6.3 6.4 6.5 6.6 6.7 6.8 6.9 7.0 7.1 7.2 7.3 7.4 7.5 7.6 7.7 7.8 7.9 8.0 8.1 8.2 8.3 8.4 8.5 8.6 8.7 8.8 8.9 9.0 9.1 9.2 9.3 9.4 9.5 9.6 9.7 9.8 9.9 10.0]
+#define OZONE_DENSITY_MULTIPLIER 1.0 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0 3.1 3.2 3.3 3.4 3.5 3.6 3.7 3.8 3.9 4.0 4.1 4.2 4.3 4.4 4.5 4.6 4.7 4.8 4.9 5.0 5.1 5.2 5.3 5.4 5.5 5.6 5.7 5.8 5.9 6.0 6.1 6.2 6.3 6.4 6.5 6.6 6.7 6.8 6.9 7.0 7.1 7.2 7.3 7.4 7.5 7.6 7.7 7.8 7.9 8.0 8.1 8.2 8.3 8.4 8.5 8.6 8.7 8.8 8.9 9.0 9.1 9.2 9.3 9.4 9.5 9.6 9.7 9.8 9.9 10.0]
 
 //#define USER_DEFINED_COEFFICIENTS
 
@@ -64,6 +64,13 @@
 #define OZONE_COLOR_B 10 //[0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255]
 
 #define FOV 60 //[10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90]
+
+#define DAY 1 //[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256 257 258 259 260 261 262 263 264 265 266 267 268 269 270 271 272 273 274 275 276 277 278 279 280 281 282 283 284 285 286 287 288 289 290 291 292 293 294 295 296 297 298 299 300 301 302 303 304 305 306 307 308 309 310 311 312 313 314 315 316 317 318 319 320 321 322 323 324 325 326 327 328 329 330 331 332 333 334 335 336 337 338 339 340 341 342 343 344 345 346 347 348 349 350 351 352 353 354 355 356 357 358 359 360 361 362 363 364 365]
+#define HOUR 1 //[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24]
+#define MINUTE 1 //[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60]
+
+#define LONGITUDE 40 //[-180 -179 -178 -177 -176 -175 -174 -173 -172 -171 -170 -169 -168 -167 -166 -165 -164 -163 -162 -161 -160 -159 -158 -157 -156 -155 -154 -153 -152 -151 -150 -149 -148 -147 -146 -145 -144 -143 -142 -141 -140 -139 -138 -137 -136 -135 -134 -133 -132 -131 -130 -129 -128 -127 -126 -125 -124 -123 -122 -121 -120 -119 -118 -117 -116 -115 -114 -113 -112 -111 -110 -109 -108 -107 -106 -105 -104 -103 -102 -101 -100 -99 -98 -97 -96 -95 -94 -93 -92 -91 -90 -89 -88 -87 -86 -85 -84 -83 -82 -81 -80 -79 -78 -77 -76 -75 -74 -73 -72 -71 -70 -69 -68 -67 -66 -65 -64 -63 -62 -61 -60 -59 -58 -57 -56 -55 -54 -53 -52 -51 -50 -49 -48 -47 -46 -45 -44 -43 -42 -41 -40 -39 -38 -37 -36 -35 -34 -33 -32 -31 -30 -29 -28 -27 -26 -25 -24 -23 -22 -21 -20 -19 -18 -17 -16 -15 -14 -13 -12 -11 -10 -9 -8 -7 -6 -5 -4 -3 -2 -1 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180]
+#define LATITUDE 0 //[-90 -89 -88 -87 -86 -85 -84 -83 -82 -81 -80 -79 -78 -77 -76 -75 -74 -73 -72 -71 -70 -69 -68 -67 -66 -65 -64 -63 -62 -61 -60 -59 -58 -57 -56 -55 -54 -53 -52 -51 -50 -49 -48 -47 -46 -45 -44 -43 -42 -41 -40 -39 -38 -37 -36 -35 -34 -33 -32 -31 -30 -29 -28 -27 -26 -25 -24 -23 -22 -21 -20 -19 -18 -17 -16 -15 -14 -13 -12 -11 -10 -9 -8 -7 -6 -5 -4 -3 -2 -1 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90]
 
 const float sunRadius        = 6.95e8;
 const float sunDistance      = 1.49e11;
@@ -86,6 +93,7 @@ uniform sampler2D phaseTextureAerosolLowAltitude;
 uniform sampler2D phaseTextureRainbow;
 uniform sampler2D phaseTextureCloud;
 uniform sampler2D phaseTextureRayleigh;
+uniform sampler2D earthDiffuse;
 
 uniform sampler2D usStandardAtmosphere;
 
@@ -113,6 +121,7 @@ const bool colortex0Clear  = false;
 #include "/lib/atmosphere/constants.glsl"
 #include "/lib/atmosphere/misc.glsl"
 #include "/lib/atmosphere/pt.glsl"
+//#include "/lib/atmosphere/pt_plane.glsl"
 #include "/lib/atmosphere/raymarched.glsl"
 
 const float sensorWidth = 1e-3 * 36.0;
@@ -204,6 +213,28 @@ vec3 EquirectangularProjection(in vec2 coord) {
 
 void main() {
     int samples = int(texture(colortex0, textureCoordinate).a);
+
+    #ifdef VIEW_FROM_SPACE
+        bool    moved  = gbufferProjection != gbufferPreviousProjection;
+        moved = moved || gbufferModelView  != gbufferPreviousModelView;
+        moved = moved || cameraPosition    != previousCameraPosition;
+        
+        if(moved) {
+            samples = 0;
+        }
+    #endif
+    #ifndef VIEW_FROM_SPACE
+        #if PROJECTION == 0
+            bool    moved  = gbufferProjection != gbufferPreviousProjection;
+            moved = moved || gbufferModelView  != gbufferPreviousModelView;
+            moved = moved || cameraPosition    != previousCameraPosition;
+            
+            if(moved) {
+                samples = 0;
+            }
+        #endif
+    #endif
+    
     #if MAXIMUM_SAMPLE_COUNT != -1
         if(samples >= MAXIMUM_SAMPLE_COUNT) {
             samples = MAXIMUM_SAMPLE_COUNT;
@@ -233,8 +264,8 @@ void main() {
 
     vec3 history = vec3(0.0);
     int weight = 0;
-    for(int x = -5; x <= 5; ++x) {
-        for(int y = -5; y <= 5; ++y) {
+    for(int x = -2; x <= 2; ++x) {
+        for(int y = -2; y <= 2; ++y) {
             history += texture(colortex0, textureCoordinate + vec2(x, y) / viewResolution, 0).rgb;
         }
     }
@@ -254,12 +285,15 @@ void main() {
         float wavelengthPDF = cmfWeights.x * (cie.x / 106.857) + cmfWeights.y * (cie.y / 106.857) + cmfWeights.z * (cie.z / 106.857);
     #endif
 
+    wavelength = 360.0 + (471.0 * RandNextF());
+    wavelengthPDF = 1.0 / 471.0;
+
     #ifndef VIEW_FROM_SPACE
         vec3 viewPosition = vec3(0.0, planetRadius + 1.0, 0.0);
 
         #if PROJECTION == 0
             vec2 uv  = (gl_FragCoord.xy * rcp(viewResolution.xy)) * 2.0 - 1.0;
-                 uv += aa;
+                 uv += aa;;
                  uv *= sensorSize / (2.0 * focalLength);
 
             vec3 viewDirection = normalize(mat3(gbufferModelViewInverse) * vec3(uv.x, uv.y, -1.0));
@@ -276,7 +310,7 @@ void main() {
             vec3 viewDirection = FisheyeProjection(uv.x, uv.y, fov);
 
             if(viewDirection == vec3(-1.0)) {
-                //discard;
+                discard;
             }
         #endif
     #else
@@ -319,14 +353,20 @@ void main() {
         #endif
         float rayleighCoefficient = BetaR(wavelength);
     #endif
-    float cloudCoefficient = cloudAbsorption[int(wavelength - 390)] * 0.0003;
+    float cloudCoefficient = cloudAbsorption[int(wavelength - 390)];
     #ifndef ENABLE_CLOUDS
         cloudCoefficient = 0.0;
     #endif
     float solarIrradiance = solarIrradiance[int(wavelength - 390.0)];
     vec4 baseAttenuationCoefficients = vec4(rayleighCoefficient, mieCoefficient, ozoneCoefficient, cloudCoefficient);
     #ifndef USE_RAYMARCHED_ATMOSPHERE
-        float atmosphere = PathtraceAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
+        AttenuationCoefficients coefficients;
+        coefficients.rayleigh = baseAttenuationCoefficients.x;
+        coefficients.aerosol = baseAttenuationCoefficients.y;
+        coefficients.ozone = baseAttenuationCoefficients.z;
+        coefficients.cloud = baseAttenuationCoefficients.w;
+        coefficients.mist = 0.0;
+        float atmosphere = PathtraceAtmosphereScattering(viewPosition, viewDirection, sunVector, coefficients, solarIrradiance, wavelength);
     #else
         float atmosphere = RaymarchAtmosphereScattering(viewPosition, viewDirection, sunVector, baseAttenuationCoefficients, solarIrradiance, wavelength);
     #endif
@@ -342,27 +382,6 @@ void main() {
     if(any(isinf(simulated))) {
         simulated = vec3(3.4e38);
     }
-
-    #ifdef VIEW_FROM_SPACE
-        bool    moved  = gbufferProjection != gbufferPreviousProjection;
-        moved = moved || gbufferModelView  != gbufferPreviousModelView;
-        moved = moved || cameraPosition    != previousCameraPosition;
-        
-        if(moved) {
-            samples = 0;
-        }
-    #endif
-    #ifndef VIEW_FROM_SPACE
-        #if PROJECTION == 0
-            bool    moved  = gbufferProjection != gbufferPreviousProjection;
-            moved = moved || gbufferModelView  != gbufferPreviousModelView;
-            moved = moved || cameraPosition    != previousCameraPosition;
-            
-            if(moved) {
-                samples = 0;
-            }
-        #endif
-    #endif
 
     vec3 previousColor = texture(colortex0, textureCoordinate).rgb;
     simulationOutput.rgb = mix(previousColor, simulated, 1.0 / (++samples));

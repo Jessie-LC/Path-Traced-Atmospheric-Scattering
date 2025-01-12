@@ -10,251 +10,109 @@
 
         float tScale = length(rayVector);
 
-        float altitude = distance(rayPosition, planetPosition) - planetRadius;
+        float altitude = abs(rayPosition.y - planetPosition.y) - planetRadius;
 
-        if (dot(rayPosition - planetPosition, rayVector) < 0.0) {
+        if (dot(vec3(0.0, rayPosition.y - planetPosition.y, 0.0), rayVector) < 0.0) {
             // Ray is (locally) moving downwards
             // Find minimum altitude along the ray
+            float minAltitude = 0.0;
 
-            float tMinAltitude = dot(planetPosition - rayPosition, rayVector) / dot(rayVector, rayVector);
-            vec3  pMinAltitude = rayPosition + rayVector * tMinAltitude;
-            float minAltitude = distance(planetPosition, pMinAltitude) - planetRadius;
-
-            minAltitude = max(minAltitude, 0.0);
-            pMinAltitude = planetPosition + vec3(0.0, planetRadius + minAltitude, 0.0);
-
-            localMajorant  = coefficients.rayleigh * CalculateAtmosphereDensity(planetRadius + minAltitude).x;
-            localMajorant += coefficients.aerosol * CalculateAtmosphereDensity(planetRadius + minAltitude).y;
-            localMajorant += coefficients.mist * CalculateMistDensity(planetRadius + minAltitude);
-
-            if (altitude <= cloudsAltitude) {
-                // Below cloud layer
-                localMajorant += coefficients.ozone * CalculateAtmosphereDensity(planetRadius + minAltitude).z;
-            } else if (altitude < cloudsMaxAltitude) {
-                // Inside cloud layer
-                localMajorant += coefficients.ozone * CalculateAtmosphereDensity(planetRadius + minAltitude).z;
-                localMajorant += coefficients.cloud;
-            } else if (altitude < 25e3) {
-                // Below ozone peak
-                localMajorant += max(
-                    coefficients.ozone * CalculateAtmosphereDensity(planetRadius + minAltitude).z,
-                    coefficients.ozone * CalculateAtmosphereDensity(altitude + planetRadius).z
-                );
-            } else {
-                // Above ozone peak
-                localMajorant += max(
-                    coefficients.ozone * CalculateAtmosphereDensity(planetRadius + minAltitude).z,
-                    coefficients.ozone * CalculateAtmosphereDensity(atmosphereLowerLimit + 25e3).z
-                );
-            }
+            localMajorant  = coefficients.rayleigh * RayleighDensityExp(planetRadius + minAltitude);
+            localMajorant += coefficients.aerosol * AerosolDensityExp(planetRadius + minAltitude);
 
             float tSampled = -log(RandNextF()) / (tScale * localMajorant);
-
-            if (altitude >= cloudsMaxAltitude) {
-                float t0, t1;
-                if (LineSphereIntersect(rayPosition, rayVector, planetPosition, planetRadius + cloudsMaxAltitude, t0, t1) != 0 && t0 < tSampled) {
-                    localMajorant += coefficients.cloud;
-                    tSampled = t0 + -log(RandNextF()) / (tScale * localMajorant);
-                }
-            }
-
-            if (altitude <= cloudsAltitude) {
-                float t0, t1;
-                LineSphereIntersect(rayPosition, rayVector, planetPosition, planetRadius + cloudsAltitude, t0, t1);
-                if (t1 < tSampled) {
-                    localMajorant += coefficients.cloud;
-                    tSampled = t1 + -log(RandNextF()) / (tScale * localMajorant);
-                }
-            }
 
             return tSampled;
         } else {
             // Ray is (locally) moving upwards (or horizontally)
-            localMajorant  = coefficients.rayleigh * CalculateAtmosphereDensity(altitude + planetRadius).x;
-            localMajorant += coefficients.aerosol * CalculateAtmosphereDensity(altitude + planetRadius).y;
-            localMajorant += coefficients.mist * CalculateMistDensity(altitude + planetRadius);
-
-            if (altitude <= cloudsAltitude) {
-                // Below cloud layer
-                localMajorant += coefficients.ozone * CalculateAtmosphereDensity(altitude + planetRadius).z;
-            } else if (altitude < cloudsMaxAltitude) {
-                // Inside cloud layer
-                localMajorant += coefficients.ozone * CalculateAtmosphereDensity(altitude + planetRadius).z;
-                localMajorant += coefficients.cloud;
-            } else if (altitude < 25e3) {
-                // Below ozone peak
-                localMajorant += coefficients.ozone * CalculateAtmosphereDensity(atmosphereLowerLimit+25e3).z;
-            } else {
-                // Above ozone peak
-                localMajorant += coefficients.ozone * CalculateAtmosphereDensity(altitude + planetRadius).z;
-            }
+            localMajorant  = coefficients.rayleigh * RayleighDensityExp(altitude + planetRadius);
+            localMajorant += coefficients.aerosol * AerosolDensityExp(altitude + planetRadius);
 
             float tSampled = -log(RandNextF()) / (tScale * localMajorant);
-
-            if (altitude <= cloudsAltitude) {
-                float t0, t1;
-                LineSphereIntersect(rayPosition, rayVector, planetPosition, planetRadius + cloudsAltitude, t0, t1);
-                if (t1 < tSampled) {
-                    localMajorant += coefficients.cloud;
-                    tSampled = t1 + -log(RandNextF()) / (tScale * localMajorant);
-                }
-            }
 
             return tSampled;
         }
     }
 
-    int FindNextInteraction(
-        in vec3 position,
-        in vec3 rayDirection, 
-        in AttenuationCoefficients coefficients,
-        out int component, 
-        out float volumeDistance, 
-        in float tMax
-    ) {
-        // Find the interaction point with the atmosphere and output the distance to said point alongside the component of the atmosphere that was interacted with
-        rayDirection = normalize(rayDirection);
-        vec2 aid = RSI(position, rayDirection, atmosphereRadius);
+    bool IntersectionDeltaTracking(in vec3 position, in vec3 direction, in AttenuationCoefficients coefficients, out float volumeDistance, inout int component, in float tMax) {
+        direction = normalize(direction);
+        float aid;
+        int atmosplane = RayPlaneIntersection(
+            position, direction,
+            vec3(0.0, atmosphereRadius, 0.0), vec3(0.0, -1.0, 0.0),
+            aid
+        );
 
-        float t = max(aid.x, 0.0);
-        float t1 = min(aid.y, tMax);
-
-        float maxAttenuationCoefficient;
+        float t1 = min(aid, tMax);
 
         vec3 startPosition = position;
 
-        t += SampleNullDistance(
+        float maxAttenuationCoefficient;
+        float t = SampleNullDistance(
             startPosition,
-            rayDirection,
+            direction,
             coefficients,
             maxAttenuationCoefficient
         );
 
-        while (t < t1) {
-            position = startPosition + rayDirection * t;
+        int steps = 0;
+        while(t < t1) {
+            position = startPosition + direction * t;
 
-            if (length(position) < atmosphereLowerLimit) {
-                return -1;
-                break;
+            if (position.y < atmosphereLowerLimit) {
+                return false;
             }
-            if (length(position) > atmosphereRadius) {
-                return -1;
-                break;
+            if(position.y > atmosphereRadius) {
+                return false;
             }
 
-            float densityRayleigh = CalculateAtmosphereDensity(length(position)).x;
-            float densityMie      = CalculateAtmosphereDensity(length(position)).y;
-            float densityOzo      = CalculateAtmosphereDensity(length(position)).z;
-            float densityMist     = CalculateMistDensity(length(position));
-            if (densityOzo > 1e35) { break; }
-            if (densityMie > 1e35) { break; }
-            if (densityRayleigh > 1e35) { break; }
+            float stepAttenuationRayleigh = coefficients.rayleigh * RayleighDensityExp(position.y);
+            float stepAttenuationAerosol = coefficients.aerosol * AerosolDensityExp(position.y);
 
-            float rayleighAttenuation = coefficients.rayleigh * densityRayleigh;
-            float mieAttenuation      = coefficients.aerosol * densityMie;
-            float ozoneAttenuation    = coefficients.ozone * densityOzo;
-            float cloudAttenuation    = 0.0;
-            float mistAttenuation     = coefficients.mist * densityMist;
-            if(length(position) > cloudsAltitude || length(position) < cloudsMaxAltitude) {
-                cloudAttenuation = coefficients.cloud * CalculateCloudShape(position);
-            }
-            float[5] stepAttenuationCoeffcients = float[](
-                rayleighAttenuation,
-                mieAttenuation, 
-                ozoneAttenuation, 
-                cloudAttenuation,
-                mistAttenuation
+            float[2] stepAttenuationCoeffcients = float[](
+                stepAttenuationRayleigh,
+                stepAttenuationAerosol
             );
 
             float rand = RandNextF();
-            if (rand < ((rayleighAttenuation + mieAttenuation + ozoneAttenuation + cloudAttenuation + mistAttenuation) / maxAttenuationCoefficient)) {
+            if (rand < ((stepAttenuationRayleigh + stepAttenuationAerosol) / maxAttenuationCoefficient)) {
                 float fraction = 0.0;
                 component = 0;
-                while (component < 5) {
+                while (component < 2) {
                     fraction += stepAttenuationCoeffcients[component];
                     if (rand * maxAttenuationCoefficient < fraction) { break; }
                     ++component;
                 }
                 volumeDistance = t;
-                return 1;
+                return true;
             }
+
+            steps += 1;
 
             t += SampleNullDistance(
                 position,
-                rayDirection,
+                direction,
                 coefficients,
                 maxAttenuationCoefficient
             );
         }
 
-        return 0;
+        return false;
     }
 
-    float EstimateTransmittance(in vec3 position, in vec3 rayDirection, in AttenuationCoefficients coefficients) {
-        // Estimate the atmosphere transmittance
-        vec2 aid = RSI(position, rayDirection, atmosphereRadius);
-        if (aid.y < 0.0) { return 0.0; }
-        vec2 pid = RSI(position, rayDirection, atmosphereLowerLimit);
-        bool planetIntersected = pid.x >= 0.0;
-        if(planetIntersected) { return 0.0; } //This is to fix an issue with the transmittance below the horizon.
-        bool atmosphereIntersected = aid.y >= 0.0;
-
-        float tMax = (planetIntersected && pid.x > 0.0) ? pid.x : aid.y;
-
-        float maxAttenuationCoefficient;
-
-        vec3 previousPosition = position;
-
-        float transmittance = 1.0;
-        float t = 0.0;
-        while (t < tMax) {
-            if (RandNextF() > transmittance) {
-                transmittance = 0.0;
-                break;
-            }
-            transmittance /= transmittance;
-
-            float stepSize = SampleNullDistance(
-                position,
-                rayDirection,
-                coefficients,
-                maxAttenuationCoefficient
-            );
-
-            t += stepSize;
-
-            position = previousPosition + rayDirection * stepSize;
-
-            if (length(position) < atmosphereLowerLimit) {
-                transmittance *= 0.0;
-                return transmittance;
-                break; 
-            }
-            if (length(position) > atmosphereRadius) { break; }
-
-            float densityRayleigh = CalculateAtmosphereDensity(length(position)).x;
-            float densityMie      = CalculateAtmosphereDensity(length(position)).y;
-            float densityOzo      = CalculateAtmosphereDensity(length(position)).z;
-            float densityMist     = CalculateMistDensity(length(position));
-            if (densityOzo > 1e35) { break; }
-            if (densityMie > 1e35) { break; }
-            if (densityRayleigh > 1e35) { break; }
-
-            float rayleighAttenuation = coefficients.rayleigh * densityRayleigh;
-            float mieAttenuation      = coefficients.aerosol * densityMie;
-            float ozoneAttenuation    = coefficients.ozone * densityOzo;
-            float cloudAttenuation    = 0.0;
-            float mistAttenuation     = coefficients.mist * densityMist;
-            if(length(position) > cloudsAltitude || length(position) < cloudsMaxAltitude) {
-                cloudAttenuation = coefficients.cloud * CalculateCloudShape(position);
-            }
-
-            transmittance *= 1.0 - ((rayleighAttenuation + mieAttenuation + ozoneAttenuation + cloudAttenuation + mistAttenuation) / maxAttenuationCoefficient);
-
-            previousPosition = position;
+    float TransmittanceAnalytical(in vec3 position, in vec3 direction, in AttenuationCoefficients coefficients) {
+        float cosViewZenith = dot(direction, vec3(0.0, 1.0, 0.0));
+        if (cosViewZenith <= 0.0) {
+            return 0.0;
         }
 
-        return saturate(transmittance);
+        position.y -= planetRadius;
+
+        float scaleSlopeViewRayleigh = scaleHeights.x / cosViewZenith;
+        float scaleSlopeViewAerosol  = scaleHeights.y / cosViewZenith;
+        float opticalDepthRayleigh   = coefficients.rayleigh * scaleSlopeViewRayleigh * exp(-position.y / scaleHeights.x);
+        float opticalDepthAerosol    = coefficients.aerosol  *  scaleSlopeViewAerosol * exp(-position.y / scaleHeights.y);
+        return exp(-(opticalDepthRayleigh + opticalDepthAerosol));
     }
 
     float PathtraceAtmosphereScattering(
@@ -284,9 +142,18 @@
         float throughput = 1.0;
         int bounces = 0;
         while(bounces < SCATTERING_EVENTS) {
-            vec2 aid = RSI(position, rayDirection, atmosphereRadius);
-            vec2 pid = RSI(position, rayDirection, atmosphereLowerLimit);
-            bool planetIntersected = pid.x > 0.0;
+            float aid;
+            int atmosplane = RayPlaneIntersection(
+                position, rayDirection,
+                vec3(0.0, atmosphereRadius, 0.0), vec3(0.0, -1.0, 0.0),
+                aid
+            );
+            float pid;
+            int groundPlane = RayPlaneIntersection(
+                position, rayDirection,
+                vec3(0.0, atmosphereLowerLimit, 0.0), vec3(0.0, 1.0, 0.0),
+                pid
+            );
 
             if(RandNextF() > throughput) {
                 throughput = 0.0;
@@ -294,34 +161,17 @@
             }
             throughput /= saturate(throughput);
 
-            vec3 normal = normalize(position + rayDirection * pid.x);
+            vec3 normal = normalize(vec3(0.0, 1.0, 0.0));
 
             vec3 oldRayDirection = normalize(rayDirection);
 
             float hitDistance;
-            bool hitAtmosphere;
-            if(planetIntersected) {
-                int interaction = FindNextInteraction(
-                    position, 
-                    rayDirection, 
-                    coefficients, 
-                    component, 
-                    hitDistance, 
-                    pid.x
-                );
-
-                hitAtmosphere = interaction == 1;
+            bool hitGround = groundPlane == 1;
+            bool hitAtmosphere = false;
+            if (hitGround) {
+                hitAtmosphere = IntersectionDeltaTracking(position, rayDirection, coefficients, hitDistance, component, pid);
             } else {
-                int interaction = FindNextInteraction(
-                    position, 
-                    rayDirection, 
-                    coefficients, 
-                    component, 
-                    hitDistance, 
-                    aid.y
-                );
-
-                hitAtmosphere = interaction == 1;
+                hitAtmosphere = IntersectionDeltaTracking(position, rayDirection, coefficients, hitDistance, component, aid);
             }
 
             if(hitAtmosphere) {
@@ -394,7 +244,7 @@
                         }
                     }
 
-                    float transmittance = EstimateTransmittance(position, sunDirection, coefficients);
+                    float transmittance = TransmittanceAnalytical(position, sunDirection, coefficients);
 
                     vec2 bid = RSI(position - ballPosition, sunDirection, ballRadius);
                     bool hitBall = bid.x >= 0.0;
@@ -464,11 +314,11 @@
                 } else {
                     break;
                 }
-            } else if(planetIntersected) {
-                position = position + rayDirection * pid.x;
+            } else if(hitGround) {
+                position = position + rayDirection * pid;
 
                 {
-                    float transmittance = EstimateTransmittance(position, sunDirection, coefficients);
+                    float transmittance = TransmittanceAnalytical(position, sunDirection, coefficients);
 
                     float bsdf = groundAlbedo * saturate(dot(sunDirection, normal)) / pi;
 
@@ -487,7 +337,7 @@
                 vec2 bid = RSI(position - ballPosition, rayDirection, ballRadius);
                 bool hitBall = bid.x >= 0.0;
                 if(bounces < 1) {
-                    estimate += float(!planetIntersected) * PhysicalSun(rayDirection, lightVector, wavelength, irradiance / ConeAngleToSolidAngle(sunAngularRadius)) * throughput;
+                    estimate += float(!hitGround) * PhysicalSun(rayDirection, lightVector, wavelength, irradiance / ConeAngleToSolidAngle(sunAngularRadius)) * throughput;
                 }
                 break;
             }
@@ -495,7 +345,7 @@
             ++bounces;
         }
 
-        if(isinf(estimate)) estimate = 0.0;
+        if(isinf(estimate)) estimate = 1.0;
         if(isnan(estimate)) estimate = 0.0;
 
         return estimate;

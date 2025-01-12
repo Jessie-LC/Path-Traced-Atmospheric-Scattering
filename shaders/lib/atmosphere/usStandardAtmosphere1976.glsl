@@ -53,7 +53,7 @@
         us1976Data.lapseRateInLayer[5] = -2.8 / 1000.0;
         us1976Data.lapseRateInLayer[6] = -2.0 / 1000.0;
 
-        float geopotentialHeight = planetRadius * (1.0 - (planetRadius / (planetRadius + altitude)));
+        float geopotentialHeight = earthRadius * (1.0 - (earthRadius / (earthRadius + altitude)));
 
         for(int i = 0; i <= 6; ++i) {
             if(us1976Data.lapseRateInLayer[i] == 0.0) {
@@ -86,7 +86,7 @@
         fill1976LayerData(altitude);
 
         us1976LU.layerGeometricAlt = altitude;
-        us1976LU.layerGeopotentialAlt = planetRadius * (1.0 - (planetRadius / (planetRadius + us1976LU.layerGeometricAlt)));
+        us1976LU.layerGeopotentialAlt = earthRadius * (1.0 - (earthRadius / (earthRadius + us1976LU.layerGeometricAlt)));
 
         for(int i = 0; i <= 6; ++i) {
             if(us1976LU.layerGeopotentialAlt <= us1976Data.altAtTopOfLayer[i]) {

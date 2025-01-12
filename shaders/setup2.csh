@@ -1,5 +1,22 @@
 #version 450
 
+/*
+    Copyright (C) 2023-2025  Jessie
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 layout (local_size_x = 16, local_size_y = 16) in;
 const ivec3 workGroups = ivec3(32, 32, 1);
 
@@ -16,7 +33,7 @@ uniform sampler3D noise3D;
 void US_StandardAtmosphereLookupUVReverse(vec2 coord, out float R) {
 	float uvR  = RemoveUvMargin(coord.y, 512);
 
-	const float H = sqrt(atmosphereRadiusSquared - (planetRadius * planetRadius));
+	const float H = sqrt(lutRadiusSquared - (planetRadius * planetRadius));
 
 	float rho = H * uvR;
 	R = sqrt(rho * rho + (planetRadius * planetRadius));
@@ -167,8 +184,8 @@ void main() {
     usStandardAtmosphere1976LU seaLevel = usStandardAtmosphere1976Lookup(0.0);
 
     if((R - planetRadius) > 85e3) {
-        us1976LU.layerLocalDensity = exp(-R * inverseScaleHeights.x + scaledPlanetRadius.x) / 3.0;
+        us1976LU.layerLocalDensity = 1.225 * exp(-(R - planetRadius) / 10e3);
     }
 
-    imageStore(usStandardAtmosphere_image, fragPos, vec4(us1976LU.layerLocalDensity / seaLevel.layerLocalDensity, max(us1976LU.layerLocalPressure, 0.0), max(us1976LU.layerLocalTemp, 0.0), clamp(O3_NumberDensity(R - planetRadius), 0.0, 4.86e18)));
+    imageStore(usStandardAtmosphere_image, fragPos, vec4(us1976LU.layerLocalDensity, max(us1976LU.layerLocalPressure, 0.0), max(us1976LU.layerLocalTemp, 0.0), clamp(O3_NumberDensity(R - planetRadius), 0.0, 4.86e18)));
 }

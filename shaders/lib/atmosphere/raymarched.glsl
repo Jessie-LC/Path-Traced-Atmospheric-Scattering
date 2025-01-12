@@ -62,6 +62,8 @@
             float phaseM = KleinNishinaPhase(dot(viewVector, sunDirection), aerosol_g);
         #elif PHASE_FUNCTION_AEROSOL == 3
             float phaseM = ApproximateMiePhase(dot(viewVector, sunDirection), meanAerosolParticleDiameter);
+        #elif PHASE_FUNCTION_AEROSOL == 4
+            float phaseM = RainbowPhase(dot(viewVector, sunDirection), wavelength);
         #endif
 
         float scattering = 0.0;

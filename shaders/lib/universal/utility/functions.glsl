@@ -252,6 +252,12 @@ vec2 RSI(vec3 pos, vec3 dir, float radius) {
     return ret;
 }
 
+float RPI(in vec3 ro, in vec3 rd, in float y) {
+    float t = -(ro.y - y) / rd.y;
+    if (sign(t) == -1.0) t = -1.0;
+    return t;
+}
+
 bool IntersectSphere(in vec3 rayPosition, in vec3 rayDirection, in float radius, out float dist) {
     vec2 sphereDists = RSI(rayPosition, rayDirection, radius);
     
@@ -352,6 +358,7 @@ vec3 GenerateConeVector(vec3 vector, vec2 xy, float angle) {
 }
 
 float Plancks(float t, float lambda) {
+    // Returns radiance in units Watts per steradian per square meter surface
     const float h = 6.62607015e-16;
     const float c = 2.99792458e17;
     const float k = 1.380649e-5;
@@ -363,6 +370,7 @@ float Plancks(float t, float lambda) {
 }
 
 float PlancksLawRadiance(float temperature) {
+    // Returns radiance in units Watts per steradian per square meter surface
 	const float h = 6.62607015e-16;
 	const float c = 2.99792458e17;
 	const float k_B = 1.380649e-5;
@@ -373,6 +381,13 @@ float PlancksLawRadiance(float temperature) {
 
 float NormalDistribution(in float x, in float mean, in float standardDeviation) {
     return (1.0 / (standardDeviation * sqrt(2.0 * pi))) * exp(-0.5 * square((x - mean) / standardDeviation));
+}
+
+vec2 SampleCircle(in vec2 rng, in float radius) {
+    float r = radius * sqrt(rng.x);
+    float t = 2.0 * pi * rng.y;
+    
+    return r * vec2(cos(t), sin(t));
 }
 
 uniform sampler2D CIELUT;
@@ -404,6 +419,22 @@ vec3 SpectrumToXYZExact_CIE1931(in float spectrum, in float w) {
 
     vec3 cie0 = texelFetch(CIELUT_1931, ivec2(n0, 1), 0).xyz;
     vec3 cie1 = texelFetch(CIELUT_1931, ivec2(n1, 1), 0).xyz;
+
+    vec3 xyz = mix(cie0, cie1, fract(n));
+
+    xyz = vec3(spectrum * 683.0) * xyz;
+
+    return xyz;
+}
+vec3 SpectrumToXYZExact_CIE1964(in float spectrum, in float w) {
+    float n = (w - 360.0);
+    int i = int(n);
+
+    int n0 = int(n);
+    int n1 = min(n0 + 1, 470);
+
+    vec3 cie0 = CIE_1964[n0];
+    vec3 cie1 = CIE_1964[n1];
 
     vec3 xyz = mix(cie0, cie1, fract(n));
 

@@ -1,5 +1,14 @@
 #if !defined LIB_ATMOSPHERE_MISC
-#define LIB_ATMOSPHERE_MISC
+#define LIB_ATMOSPHERE_MISC    
+    struct AttenuationCoefficients {
+        float rayleigh;
+        float aerosol;
+        float ozone;
+        float cloud;
+        float mist;
+        float oxygen;
+    };
+
     float S(in float x) {
         return 10.0 * pow(x, 3.0) - 15.0 * pow(x, 4.0) + 6.0 * pow(x, 5.0);
     }
@@ -26,7 +35,7 @@
     }
 
     vec2 US_StandardAtmosphereLookupUV(float R) {
-        const float H = sqrt(atmosphereRadiusSquared - (planetRadius * planetRadius));
+        const float H = sqrt(lutRadiusSquared - (planetRadius * planetRadius));
 
         float rho = sqrt(max(R * R - (planetRadius * planetRadius), 0.0));
 
@@ -36,6 +45,11 @@
     }
     vec4 GetUS_StandardAtmosphereLUT(in float coreDistance) {
         return texture(usStandardAtmosphere, US_StandardAtmosphereLookupUV(coreDistance));
+    }
+
+    float CalculateMistDensity(in float coreDistance) {
+        float altitude = (coreDistance - planetRadius) / kilometer;
+        return clamp(exp(-(altitude - 1.0) / 2.0), 0.0, 10.0);
     }
 
     vec3 CalculateAtmosphereDensity(in float coreDistance) {
@@ -71,21 +85,14 @@
     #endif
 
     float BetaR(in float wavelength) {
-        float nanometers = wavelength * 1e-9;
-
-        float F_N2 = 1.034 + 3.17e-4 * (1.0 / pow(wavelength, 2.0));
-        float F_O2 = 1.096 + 1.385e-3 * (1.0 / pow(wavelength, 2.0)) + 1.448e-4 * (1.0 / pow(wavelength, 4.0));
-        float CCO2 = 0.045;
-        float kingFactor = (78.084 * F_N2 + 20.946 * F_O2 + 0.934 + CCO2 * 1.15) / (78.084 + 20.946 + 0.934 + CCO2);
-        float n = square(Air(wavelength * 1e-3)) - 1.0;
-
-        return ((8.0 * pow(pi, 3.0) * pow(n, 2.0)) / (3.0 * airNumberDensity * pow(nanometers, 4.0))) * kingFactor;
+        // Returns the cross section in units of m^2
+        return airNumberDensity * RayleighCrossSection[int(min(clamp(wavelength, 390.0, 831.0) - 390.0, 441.0))];
     }
 
     float BetaO(float wavelength) {
         if(wavelength < 390.0 || wavelength > 830.0) return 0.0;
 
-        return 0.0001 * OZONE_DENSITY_MULTIPLIER * ozoneCrossSection[int(wavelength - 390.0)];
+        return 0.0001 * OZONE_DENSITY_MULTIPLIER * ozoneCrossSection[int(min(clamp(wavelength, 390.0, 831.0) - 390.0, 441.0))];
     }
 
     float PreethamBetaO_Fit(in float wavelength) {
@@ -158,6 +165,13 @@
             return 5e-21 * OZONE_DENSITY_MULTIPLIER * spectrum * 0.0001;
         }
     #endif
+    float BetaMist(in float wavelength) {
+        vec3 color = vec3(0.9, 0.85, 0.8);
+
+        float spectrum;
+        RGBToSpectrum(spectrum, wavelength, color.r, color.g, color.b, 0);
+        return spectrum * 2e-4;
+    }
 
     vec4 GetNoise(sampler3D noiseSampler, vec3 position) {
         return texture(noiseSampler, fract(position));
@@ -172,7 +186,7 @@
         float stopHeight = saturate(localizedCoverage + 0.6); 
         returnValue *= saturate(remap(percentHeight, stopHeight * 0.2, stopHeight, 1.0, 0.0));
 
-        returnValue = pow(returnValue, saturate(remap(percentHeight, 0.65, 0.95, 1.0, (1 - cloudAnvilAmount * globalCoverage))));
+        returnValue = pow(returnValue, saturate(remap(percentHeight, 0.65, 0.95, 1.0, (1 - cloudAnvilAmount * (1.0 - globalCoverage)))));
 
         return returnValue;
     }
@@ -238,11 +252,11 @@
     float CalculateCloudShape(in vec3 position) {
         if(length(position) - planetRadius > cloudsMaxAltitude || length(position) - planetRadius < cloudsAltitude) return 0.0;
 
-        position += vec3(1500.0, 0.0, 0.0);
+        position += vec3(0.0, 0.0, 0.0);
 
-        vec3 cloudPosition = position / (cloudsThickness*512.0);
+        vec3 cloudPosition = position / (cloudsThickness*64.0);
 
-        cloudPosition += WaveDisplacement(cloudPosition.xz * 1.0);
+        //cloudPosition += WaveDisplacement(cloudPosition.xz * 1.0);
 
         float coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.1).r;
               coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.3).r * 0.8 + coverageNoise;
@@ -250,7 +264,7 @@
               coverageNoise = GetNoise(noise3D, vec3(cloudPosition.x, 0.0, cloudPosition.z) * 0.5).r * 0.4 + coverageNoise;
 
         float localizedCoverage = coverageNoise * 3.0 - 1.8;
-        float coverage = globalCoverage * localizedCoverage;
+        float coverage = (1.0 - globalCoverage) * localizedCoverage;
 
         float height = (length(position) - planetRadius) - cloudsAltitude;
         float normalizeHeight = height * (1.0 / cloudsThickness);

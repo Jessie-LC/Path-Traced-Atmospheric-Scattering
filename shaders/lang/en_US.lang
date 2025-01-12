@@ -13,6 +13,7 @@ value.PHASE_FUNCTION_AEROSOL.0=Exact
 value.PHASE_FUNCTION_AEROSOL.1=Henyey Greenstein
 value.PHASE_FUNCTION_AEROSOL.2=Klein Nishina
 value.PHASE_FUNCTION_AEROSOL.3=Henyey Greenstein + Draine
+value.PHASE_FUNCTION_AEROSOL.4=Rainbow
 option.PHASE_FUNCTION_CLOUD=Phase Function Cloud
 value.PHASE_FUNCTION_CLOUD.0=Exact
 value.PHASE_FUNCTION_CLOUD.1=Henyey Greenstein + Draine

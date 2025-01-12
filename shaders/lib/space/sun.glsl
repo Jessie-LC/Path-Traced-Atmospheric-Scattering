@@ -58,4 +58,41 @@
 
         return PhysicalSun07(sceneDirection, lightDirection, wavelength, radiance);
     }
+
+    float CorrectDegreeRange(in float d) {
+        d = mod(d, 360.0);
+        if(d < 0.0) {
+            d += 360.0;
+        }
+        return d;
+    }
+
+    vec3 CalculateSunPosition(in float JD, in float longitude, in float latitude) {
+        /*
+            Equations from Astronomical Algorithms by Jean Meeus, second edition.
+        */
+        float T = (JD - J2000) / 36525.0; //Eq 12.1
+        float siderealTime = 280.46061837 + 360.98564736629 * (JD - J2000) + 0.000387933 * T*T - pow(T, 3.0) / 38710000.0; //Eq 12.4
+        float geometricMeanLongitude = CorrectDegreeRange(280.46646 + 36000.76983 * T + 0.0003032 * T*T); //Eq 25.2
+        float meanAnomaly = CorrectDegreeRange(357.52911 + 35999.05029 * T + 0.0001537 * T*T); //Eq 25.3
+
+        float eccentricity = 0.016708634 - 0.000042037 * T - 0.0000001267 * T*T; //Eq 25.4
+
+        float center = +(1.914602 - 0.004817 * T - 0.000014 * T*T) * sin(meanAnomaly) + (0.019993 - 0.000101 * T) * sin(2.0 * meanAnomaly) + 0.000289 * sin(3.0 * meanAnomaly);
+
+        float trueLongitude = geometricMeanLongitude + center;
+        float trueAnomaly = meanAnomaly + center;
+
+        float R = (1.000001018 * (1.0 - square(eccentricity))) / (1.0 + eccentricity * cos(trueAnomaly)); //Eq 25.5
+
+        float tan_rightAcension = (cos(eccentricity) * sin(trueLongitude)) / cos(trueLongitude); //Eq 25.6
+        float sin_declination = sin(eccentricity) * sin(trueLongitude); //Eq 25.7
+
+        float localHourAngle = siderealTime - longitude - atan(tan_rightAcension);
+
+        float tan_azimuth = sin(localHourAngle) / (cos(localHourAngle) * sin(latitude) - tan(asin(sin_declination)) * cos(latitude)); //Eq 13.5
+        float sin_altitude = sin(latitude) * sin_declination + cos(latitude) * cos(asin(sin_declination)) * cos(localHourAngle); //Eq 13.6
+
+        return vec3(atan(tan_azimuth), asin(sin_altitude), R);
+    }
 #endif

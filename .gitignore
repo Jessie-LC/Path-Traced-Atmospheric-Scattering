@@ -9,3 +9,4 @@ shaders/textures/ignore/earthmap4k.png
 shaders/lib/atmosphere/rainbow.glsl
 *.png
 *.txt
+/disabled
