@@ -1,7 +1,7 @@
 #if !defined LIB_ATMOSPHERE_MISC
 #define LIB_ATMOSPHERE_MISC    
     struct AttenuationCoefficients {
-        float rayleigh;
+        float rayleigh; // Will be broken down into nitrogen and oxygen eventually
         float aerosol;
         float ozone;
         float cloud;
@@ -20,7 +20,7 @@
     }
 
     float RayleighDensityExp(in float h) {
-        return exp(-h * inverseScaleHeights.x + scaledPlanetRadius.x);
+        return 1.225 * exp(-h * inverseScaleHeights.x + scaledPlanetRadius.x);
     }
     float AerosolDensityExp(in float h) {
         return exp(-h * inverseScaleHeights.y + scaledPlanetRadius.y);
@@ -72,7 +72,7 @@
     #ifndef EXPONENTIAL_DENSITY
         float BetaM(in float wavelength) {
             float B = 0.0009;
-            return pow(wavelength, -1.0) * B;
+            return pow(610.5, -1.0) * B;
         }
     #else
         float BetaM(in float wavelength) {

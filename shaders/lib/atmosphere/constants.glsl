@@ -24,7 +24,7 @@
 
     const float cleanAerosolAlbedo = 0.99;
     const float dirtyAerosolAlbedo = 0.90;
-    const float aerosolScatteringAlbedo = cleanAerosolAlbedo; // Clean aerosols scatter around 99.9% of light, however dirty aerosols scatter around 90%
+    const float aerosolScatteringAlbedo = dirtyAerosolAlbedo; // Clean aerosols scatter around 99.9% of light, however dirty aerosols scatter around 90%
     const float mistScatteringAlbedo = 0.99;
     const float cloudScatteringAlbedo = 0.99;
 

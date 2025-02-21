@@ -110,9 +110,47 @@
 
         float scaleSlopeViewRayleigh = scaleHeights.x / cosViewZenith;
         float scaleSlopeViewAerosol  = scaleHeights.y / cosViewZenith;
-        float opticalDepthRayleigh   = coefficients.rayleigh * scaleSlopeViewRayleigh * exp(-position.y / scaleHeights.x);
+        float opticalDepthRayleigh   = 1.225 * coefficients.rayleigh * scaleSlopeViewRayleigh * exp(-position.y / scaleHeights.x);
         float opticalDepthAerosol    = coefficients.aerosol  *  scaleSlopeViewAerosol * exp(-position.y / scaleHeights.y);
         return exp(-(opticalDepthRayleigh + opticalDepthAerosol));
+    }
+
+    float AnalyticSingleScattering(
+        in vec3 viewPosition, 
+        in vec3 viewVector, 
+        in vec3 lightVector, 
+        in AttenuationCoefficients coefficients, 
+        in float irradiance, 
+        in float wavelength
+    ) {
+        vec3 position = viewPosition;
+        vec3 rayDirection = viewVector;
+        vec3 sunDirection = GenerateConeVector(lightVector, RandNext2F(), sunAngularRadius);
+
+        float phaseR = RayleighPhase(dot(viewVector, sunDirection), wavelength);
+        float phaseM = AerosolPhase(dot(viewVector, sunDirection), wavelength);
+
+        float cosViewZenith = dot(rayDirection, vec3(0.0, 1.0, 0.0));
+        float cosLightZenith = dot(sunDirection, vec3(0.0, 1.0, 0.0));
+
+        float transmittance = TransmittanceAnalytical(position, rayDirection, coefficients);
+        float lightTransmittance = TransmittanceAnalytical(position, sunDirection, coefficients);
+
+        position.y -= planetRadius;
+
+        float scaleSlopeViewRayleigh = scaleHeights.x / cosViewZenith;
+        float scaleSlopeViewAerosol  = scaleHeights.y / cosViewZenith;
+        float viewOpticalDepthRayleigh   = 1.225 * coefficients.rayleigh * scaleSlopeViewRayleigh * exp(-position.y / scaleHeights.x);
+        float viewOpticalDepthAerosol    = coefficients.aerosol          *  scaleSlopeViewAerosol * exp(-position.y / scaleHeights.y);
+
+        float scaleSlopeSunRayleigh = scaleHeights.x / cosLightZenith;
+        float scaleSlopeSunAerosol  = scaleHeights.y / cosLightZenith;
+        float sunOpticalDepthRayleigh   = 1.225 * coefficients.rayleigh * scaleSlopeSunRayleigh * exp(-position.y / scaleHeights.x);
+        float sunOpticalDepthAerosol    = coefficients.aerosol          *  scaleSlopeSunAerosol * exp(-position.y / scaleHeights.y);
+
+        float absorption = abs((transmittance - lightTransmittance) + 1e-35) / abs(((viewOpticalDepthRayleigh + viewOpticalDepthAerosol) - (sunOpticalDepthRayleigh + sunOpticalDepthAerosol)) + 1e-35);
+
+        return absorption * ((phaseR * 1.225 * coefficients.rayleigh * scaleSlopeViewRayleigh) + (phaseM * (coefficients.aerosol * aerosolScatteringAlbedo) * scaleSlopeViewAerosol)) * irradiance;
     }
 
     float PathtraceAtmosphereScattering(
@@ -151,7 +189,7 @@
             float pid;
             int groundPlane = RayPlaneIntersection(
                 position, rayDirection,
-                vec3(0.0, atmosphereLowerLimit, 0.0), vec3(0.0, 1.0, 0.0),
+                vec3(0.0, atmosphereLowerLimit, 0.0), vec3(0.0, -1.0, 0.0),
                 pid
             );
 
