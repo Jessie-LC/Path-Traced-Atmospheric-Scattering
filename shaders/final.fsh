@@ -176,6 +176,16 @@ void PrintDebugText(inout vec3 color) {
     endText(color);
 }
 
+float S(in float x) {
+    return 10.0 * pow(x, 3.0) - 15.0 * pow(x, 4.0) + 6.0 * pow(x, 5.0);
+}
+float E(in float h) {
+    return exp(-h / 40000.0) * S(min(max((h - (2000.0 + 500.0 / 2.0)) / ((2000.0 - 500.0 / 2.0) - (2000.0 + 500.0 / 2.0)), 0.0), 1.0));
+}
+float AerosolDensity(in float h) {
+    return ((h < 11000.0 ? exp(-h / 80000.0) : exp(-11000.0 / 80000.0) * exp(-(h - 11000.0) / 2000.0)) + E(h) * ((0.166 * 1.2 - 0.164) * 1000.0)) / 2.0;
+}
+
 void main() {
     float exposure = EV100ToExposure(ComputeEV100()) * rcp(pi);
     vec3 color = texture(colortex0, textureCoordinate).rgb * exposure;
@@ -233,20 +243,19 @@ void main() {
             color = (albedoXYZ * xyzToRGBMatrix_D65) / (D65XYZ * xyzToRGBMatrix_D65);
         }
     #endif
-    //finalColor = LinearToSrgb(CameraTonemap(color, ISO));
-    finalColor = 1.0 - exp(-color);
-    finalColor = LinearToSrgb(color);
+    finalColor = LinearToSrgb(CameraTonemap(color, ISO));
+    //finalColor = LinearToSrgb(1.0 - exp(-color));
+
+    //float rayleigh = RayleighCrossSection[int(textureCoordinate.x * 441.0)] / 2.6325e-30;
+
+    //finalColor = textureCoordinate.x > texture(usStandardAtmosphere, textureCoordinate).w / 4.86e18 ? vec3(0.0) : vec3(0.40, 0.25, 1.0);
+    //finalColor  = textureCoordinate.x > AerosolDensity(textureCoordinate.y * 50e3) / 10.0 ? vec3(0.0) : vec3(1.0, 0.75, 0.45);
+    //finalColor += textureCoordinate.x > texture(usStandardAtmosphere, textureCoordinate).x / 1.225 ? vec3(0.0) : vec3(1.0, 0.5, 0.25);
+    //finalColor += textureCoordinate.x > texture(usStandardAtmosphere, textureCoordinate).y / 10.0 ? vec3(0.0) : vec3(0.25, 0.5, 1.0);
 
     if(hideGUI == 0) {
         PrintDebugText(finalColor);
     }
-
-    //float rayleigh = RayleighCrossSection[int(textureCoordinate.x * 441.0)] / 2.6325e-30;
-
-    //finalColor = textureCoordinate.x > texture(usStandardAtmosphere, textureCoordinate).w / 4.86e18 ? vec3(0.0) : vec3(1.0);
-    //finalColor  = vec3(0.0);
-    //finalColor += textureCoordinate.x > texture(usStandardAtmosphere, textureCoordinate).x / 1.225 ? vec3(0.0) : vec3(1.0, 0.5, 0.25);
-    //finalColor += textureCoordinate.x > texture(usStandardAtmosphere, textureCoordinate).y / 1.225 ? vec3(0.0) : vec3(0.25, 0.5, 1.0);
 
     finalColor += Bayer64(gl_FragCoord.xy) / 64.0;
 }

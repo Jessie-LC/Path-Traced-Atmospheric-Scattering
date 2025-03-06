@@ -125,7 +125,7 @@ const float US_OzoneNumberDensity[40] = {
     1.7e14
 };
 
-int BinarySearch(int lowIndex, int highIndex, float toFind) {
+int BinarySearch_Ozone(int lowIndex, int highIndex, float toFind) {
     while (lowIndex < highIndex) {
         int midIndex = (lowIndex + highIndex) >> 1;
         if (OzoneAltitude[midIndex] < toFind) {
@@ -140,38 +140,195 @@ int BinarySearch(int lowIndex, int highIndex, float toFind) {
 }
 
 float O3_NumberDensity(in float altitude) {
-	float altitudeMin = altitude - 0.5, altitudeMax = altitude + 0.5;
-	float start = max(altitudeMin, OzoneAltitude[0].x);
-	float end = min(altitudeMax, OzoneAltitude[39].x);
+	float altitudeMin = altitude;
+	float start = max(altitudeMin, OzoneAltitude[0]);
 
-	int idx = int(max(distance(0.0, float(BinarySearch(0, 39, start))), 1.0) - 1.0);
+    if (altitude > OzoneAltitude[39]) {
+        return 0.0;
+    }
 
-	if(end <= start) {
-		return 0.0;
-	}
+    //*
+	int k = BinarySearch_Ozone(0, 39, start);
 
-	float numberDensity = 0.0;
-	for(int entry = idx; entry < 40 && end >= OzoneAltitude[entry].x; ++entry) {
-		float a = OzoneAltitude[entry],
-		      b = OzoneAltitude[entry + 1],
-			  ca = max(a, start),
-			  cb = min(b, end),
-			  fa = US_OzoneNumberDensity[entry],
-			  fb = US_OzoneNumberDensity[entry + 1],
-			  invAB = 1.0 / (b - a);
+    float ozoneK   =             US_OzoneNumberDensity[k];
+    float ozoneK1  =         US_OzoneNumberDensity[k + 1];
+    float ozoneK2  =         US_OzoneNumberDensity[k + 2];
+    float ozoneKn1 = US_OzoneNumberDensity[max(k - 1, 0)];
+    float altitudeK   =             OzoneAltitude[k];
+    float altitudeK1  =         OzoneAltitude[k + 1];
+    float altitudeK2  =         OzoneAltitude[k + 2];
+    float altitudeKn1 = OzoneAltitude[max(k - 1, 0)];
+    float mk = CardinalSplineM(ozoneK1, ozoneKn1, altitudeK1, altitudeKn1, 0.0);
+    float mk1 = CardinalSplineM(ozoneK2, ozoneK, altitudeK2, altitudeK, 0.0);
+    return CubicHermiteSpline(ozoneK, ozoneK1, mk, mk1, altitude, altitudeK, altitudeK1);
+    /*/
+	int idx = BinarySearch_Ozone(0, 39, start);
 
-		if(ca >= cb) {
-			continue;
-		}
+    return Remap(
+                              altitude, 
+                    OzoneAltitude[idx], 
+                OzoneAltitude[idx + 1], 
+            US_OzoneNumberDensity[idx], 
+        US_OzoneNumberDensity[idx + 1]
+    );
+    //*/
+}
 
-		float interpA = mix(fa, fb, (ca - a) * invAB);
-		float interpB = mix(fa, fb, (cb - a) * invAB);
+const float AerosolAltitude[51] = {
+    0.0,
+    1.0,
+    2.0,
+    3.0,
+    4.0,
+    5.0,
+    6.0,
+    7.0,
+    8.0,
+    9.0,
+    10.0,
+    11.0,
+    12.0,
+    13.0,
+    14.0,
+    15.0,
+    16.0,
+    17.0,
+    18.0,
+    19.0,
+    20.0,
+    21.0,
+    22.0,
+    23.0,
+    24.0,
+    25.0,
+    26.0,
+    27.0,
+    28.0,
+    29.0,
+    30.0,
+    31.0,
+    32.0,
+    33.0,
+    34.0,
+    35.0,
+    36.0,
+    37.0,
+    38.0,
+    39.0,
+    40.0,
+    41.0,
+    42.0,
+    43.0,
+    44.0,
+    45.0,
+    46.0,
+    47.0,
+    48.0,
+    49.0,
+    50.0,
+};
 
-		numberDensity += 0.5 * (interpA + interpB) * (cb - ca);
-	}
-	numberDensity = numberDensity / (altitudeMax - altitudeMin);
+const float AerosolCoefficient_Altitude[51] = {
+    1.58e-1,
+    6.95e-2,
+    3.00e-2,
+    1.26e-2,
+    6.66e-3,
+    5.02e-3,
+    3.54e-3,
+    3.29e-3,
+    3.39e-3,
+    3.25e-3,
+    3.17e-3,
+    2.97e-3,
+    3.12e-3,
+    2.88e-3,
+    2.82e-3,
+    2.65e-3,
+    2.52e-3,
+    2.49e-3,
+    2.41e-3,
+    2.03e-3,
+    1.49e-3,
+    1.08e-3,
+    8.13e-4,
+    6.22e-4,
+    4.93e-4,
+    4.15e-4,
+    3.62e-4,
+    2.77e-4,
+    2.12e-4,
+    1.63e-4,
+    1.25e-4,
+    9.55e-5,
+    7.31e-5,
+    5.60e-5,
+    4.29e-5,
+    3.29e-5,
+    2.52e-5,
+    1.93e-5,
+    1.48e-5,
+    1.13e-5,
+    8.66e-6,
+    6.64e-6,
+    5.08e-6,
+    3.89e-6,
+    2.98e-6,
+    2.28e-6,
+    1.75e-6,
+    1.34e-6,
+    1.03e-6,
+    7.86e-7,
+    6.02e-7
+};
 
-	return numberDensity;
+int BinarySearch_Aerosol(int lowIndex, int highIndex, float toFind) {
+    while (lowIndex < highIndex) {
+        int midIndex = (lowIndex + highIndex) >> 1;
+        if (AerosolAltitude[midIndex] < toFind) {
+            lowIndex = midIndex + 1;
+        } else if (AerosolAltitude[midIndex] > toFind) {
+            highIndex = midIndex;
+        } else {
+            return midIndex;
+        }
+    }
+    return highIndex - 1;
+}
+
+float AerosolDensity(in float altitude) {
+	float altitudeMin = altitude;
+	float start = max(altitudeMin, AerosolAltitude[0]);
+
+    if (altitude > AerosolAltitude[50]) {
+        return exp(-altitude / 1.2);
+    }
+
+    //*
+	int k = BinarySearch_Aerosol(0, 50, start);
+
+    float aerosolK   =             AerosolCoefficient_Altitude[k];
+    float aerosolK1  =         AerosolCoefficient_Altitude[k + 1];
+    float aerosolK2  =         AerosolCoefficient_Altitude[k + 2];
+    float aerosolKn1 = AerosolCoefficient_Altitude[max(k - 1, 0)];
+    float altitudeK   =             AerosolAltitude[k];
+    float altitudeK1  =         AerosolAltitude[k + 1];
+    float altitudeK2  =         AerosolAltitude[k + 2];
+    float altitudeKn1 = AerosolAltitude[max(k - 1, 0)];
+    float mk = CardinalSplineM(aerosolK1, aerosolKn1, altitudeK1, altitudeKn1, 0.0);
+    float mk1 = CardinalSplineM(aerosolK2, aerosolK, altitudeK2, altitudeK, 0.0);
+    return CubicHermiteSpline(aerosolK, aerosolK1, mk, mk1, altitude, altitudeK, altitudeK1) * 6.32911392405;
+    /*/
+	int idx = BinarySearch_Aerosol(0, 50, start);
+
+    return Remap(
+                                    altitude, 
+                        AerosolAltitude[idx], 
+                    AerosolAltitude[idx + 1], 
+            AerosolCoefficient_Altitude[idx], 
+        AerosolCoefficient_Altitude[idx + 1]
+    ) * 6.32911392405; // Normalization constant calculated from the Preetham aerosol coefficient function with a turbidity of 1.44
+    //*/
 }
 
 void main() {
@@ -187,5 +344,5 @@ void main() {
         us1976LU.layerLocalDensity = 1.225 * exp(-(R - planetRadius) / 10e3);
     }
 
-    imageStore(usStandardAtmosphere_image, fragPos, vec4(us1976LU.layerLocalDensity, max(us1976LU.layerLocalPressure, 0.0), max(us1976LU.layerLocalTemp, 0.0), clamp(O3_NumberDensity(R - planetRadius), 0.0, 4.86e18)));
+    imageStore(usStandardAtmosphere_image, fragPos, vec4(us1976LU.layerLocalDensity, AerosolDensity((R - planetRadius) / 1000.0), max(us1976LU.layerLocalTemp, 0.0), clamp(O3_NumberDensity(R - planetRadius), 0.0, 4.86e18)));
 }

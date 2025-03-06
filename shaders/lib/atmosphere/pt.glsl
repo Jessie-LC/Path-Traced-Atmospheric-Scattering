@@ -207,12 +207,18 @@
 
         float transmittance = 1.0;
         float t = 0.0;
+        int i = 0;
         while (t < tMax) {
-            //if (RandNextF() > transmittance) {
-            //    transmittance = 0.0;
-            //    break;
-            //}
-            //transmittance /= transmittance;
+            ++i;
+            if (i > 1000) {
+                break;
+            }
+
+            if (RandNextF() > transmittance) {
+                transmittance = 0.0;
+                break;
+            }
+            transmittance /= transmittance;
 
             float stepSize = SampleNullDistance(
                 position,

@@ -157,8 +157,7 @@ float CubicHermiteSpline(in float pk, in float pk1, in float mk, in float mk1, i
     return CubicHermite00(t) * pk + CubicHermite10(t) * scale * mk + CubicHermite01(t) * pk1 + CubicHermite11(t) * scale * mk1;
 }
 
-float CardinalSplineM(in float pk1, in float pkn1, in float xk1, in float xkn1) {
-    float c = 0.5;
+float CardinalSplineM(in float pk1, in float pkn1, in float xk1, in float xkn1, in float c) {
     return (1.0 - c) * ((pk1 - pkn1) / (xk1 - xkn1));
 }
 
@@ -665,4 +664,8 @@ float AirN(in float lambda, in float T, in float p, in float h) {
     float pw = p * Mw / (Z(T, p, xw) * R * T) * xw;
 
     return 1.0 + (pa / paxs) * (naxs - 1.0) + (pw / pws) * (nws - 1.0);
+}
+
+float Remap(float value, float originalMin, float originalMax, float newMin, float newMax) {
+    return newMin + (saturate((value - originalMin) / (originalMax - originalMin)) * (newMax - newMin));
 }

@@ -26,12 +26,16 @@
         return exp(-h * inverseScaleHeights.y + scaledPlanetRadius.y);
     }
 
-    float OzoneDensity(in float altitudeKm) {
+    float OzoneDensityZombye(in float altitudeKm) {
         float o1 = 25.0 *     exp(( 0.0 - altitudeKm) /   8.0) * 0.5;
         float o2 = 30.0 * pow(exp((18.0 - altitudeKm) /  80.0), altitudeKm - 18.0);
         float o3 = 75.0 * pow(exp((25.3 - altitudeKm) /  35.0), altitudeKm - 25.3);
         float o4 = 50.0 * pow(exp((30.0 - altitudeKm) / 150.0), altitudeKm - 30.0);
         return (o1 + o2 + o3 + o4) / 134.628;
+    }
+    float OzoneDensityExp(in float altitudeKm) {
+        float x = square(altitudeKm);
+        return exp(-(x - 25.0) / square(15.0));
     }
 
     vec2 US_StandardAtmosphereLookupUV(float R) {
@@ -55,37 +59,94 @@
     vec3 CalculateAtmosphereDensity(in float coreDistance) {
         float altitudeKm = (coreDistance - planetRadius) / kilometer;
 
-        vec2 rm;
-        #ifndef EXPONENTIAL_DENSITY
-            rm.x = GetUS_StandardAtmosphereLUT(coreDistance).r;
-            rm.y = AerosolDensity(coreDistance - planetRadius);
-        #else
-            rm.x = RayleighDensityExp(coreDistance);
-            rm.y = AerosolDensityExp(coreDistance);
+        vec4 us1976 = GetUS_StandardAtmosphereLUT(coreDistance);
+
+        #if RAYLEIGH_DENSITY_PROFILE == 0
+            float rayleigh = us1976.x;
+        #elif RAYLEIGH_DENSITY_PROFILE == 1
+            float rayleigh = RayleighDensityExp(coreDistance);
         #endif
 
-        float ozone = GetUS_StandardAtmosphereLUT(coreDistance).w; //Number density
+        #if AEROSOL_DENSITY_PROFILE == 0
+            float aerosol = us1976.y; // This is not actually part of the US Standard Atmosphere, but it is currently included in the same texture
+        #elif AEROSOL_DENSITY_PROFILE == 1
+            float aerosol = AerosolDensity(coreDistance - planetRadius);
+        #elif AEROSOL_DENSITY_PROFILE == 2
+            float aerosol = AerosolDensityExp(coreDistance);
+        #endif
 
-        return max(vec3(rm, ozone), 0.0);
+        #if OZONE_DENSITY_PROFILE == 0
+            float ozone = us1976.w;
+        #elif OZONE_DENSITY_PROFILE == 1
+            float ozone = OzoneDensityZombye(altitudeKm) * 4.86e18;
+        #elif OZONE_DENSITY_PROFILE == 2
+            float ozone = OzoneDensityExp(altitudeKm) * 4.86e18;
+        #endif
+
+        return vec3(rayleigh, aerosol, ozone);
     }
 
-    #ifndef EXPONENTIAL_DENSITY
-        float BetaM(in float wavelength) {
-            float B = 0.0009;
-            return pow(610.5, -1.0) * B;
-        }
-    #else
-        float BetaM(in float wavelength) {
-            const float junge = 4.0;
+    float BetaM_Zombye(in float wavelength) {
+        float B = 0.0009;
+        return pow(wavelength, -1.0) * B;
+    }
 
-            float c = (0.6544 * TURBIDITY - 0.6510) * 4e-18;
-            float K = (0.773335 - 0.00386891 * wavelength) / (1.0 - 0.00546759 * wavelength);
-            return 0.434 * c * pi * pow(tau / (wavelength * 1e-9), junge - 2.0) * K;
+    float BetaM_Preetham(in float wavelength) {
+        const float junge = 4.0;
+
+        float c = (0.6544 * TURBIDITY - 0.6510) * 4e-18;
+        float K = (0.773335 - 0.00386891 * wavelength) / (1.0 - 0.00546759 * wavelength);
+        return 0.434 * c * pi * pow(tau / (wavelength * 1e-9), junge - 2.0) * K;
+    }
+
+    int BinarySearch_Aerosol(int lowIndex, int highIndex, float toFind) {
+        while (lowIndex < highIndex) {
+            int midIndex = (lowIndex + highIndex) >> 1;
+            if (AerosolWavelengths[midIndex] < toFind) {
+                lowIndex = midIndex + 1;
+            } else if (AerosolWavelengths[midIndex] > toFind) {
+                highIndex = midIndex;
+            } else {
+                return midIndex;
+            }
         }
-    #endif
+        return highIndex - 1;
+    }
+
+    float BetaM_Measured(in float wavelength) {
+        float wavelengthMin = wavelength;
+        float start = max(wavelengthMin, AerosolWavelengths[0]);
+
+        int idx = BinarySearch_Aerosol(0, 12, start);
+
+        #if AEROSOL_DENSITY_PROFILE == 1
+            float c = 1.0;
+        #else
+            float c = (0.6544 * TURBIDITY - 0.6510) * 4e-18; // Added to enable 
+        #endif
+    
+        return Remap(
+            wavelength, 
+            AerosolWavelengths[idx], 
+            AerosolWavelengths[idx + 1], 
+            AerosolCoefficient[idx], 
+            AerosolCoefficient[idx + 1]
+        ) * 1e-3 * 0.01035670886 * c;
+    }
+
+    float BetaM(in float wavelength) {
+        #ifdef USE_MEASURED_AEROSOL_COEFFICIENT
+            return BetaM_Measured(wavelength);
+        #else
+            #if AEROSOL_DENSITY_PROFILE == 1
+                return BetaM_Zombye(wavelength);
+            #else
+                return BetaM_Preetham(wavelength);
+            #endif
+        #endif
+    }
 
     float BetaR(in float wavelength) {
-        // Returns the cross section in units of m^2
         return airNumberDensity * RayleighCrossSection[int(min(clamp(wavelength, 390.0, 831.0) - 390.0, 441.0))];
     }
 
@@ -137,8 +198,8 @@
         float xk1 = preethamWavelengths[k + 1];
         float xk2 = preethamWavelengths[k + 2];
         float xkn1 = preethamWavelengths[k - 1];
-        float mk = CardinalSplineM(pk1, pkn1, xk1, xkn1);
-        float mk1 = CardinalSplineM(pk2, pk, xk2, xk);
+        float mk = CardinalSplineM(pk1, pkn1, xk1, xkn1, 0.5);
+        float mk1 = CardinalSplineM(pk2, pk, xk2, xk, 0.5);
         return clamp(0.0001 * OZONE_DENSITY_MULTIPLIER * (CubicHermiteSpline(pk, pk1, mk, mk1, wavelength, xk, xk1) / 2.5e21), 0.0, 5.0e-21);
     }
 

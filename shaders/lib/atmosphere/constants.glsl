@@ -38,4 +38,38 @@
     const float gammaAir = 1.4;
 
     const float g = 9.80665;
+
+    // Units are inverse kilometers
+    const float AerosolCoefficient[] = {
+        2.60e-1,
+        2.50e-1,
+        2.40e-1,
+        2.40e-1,
+        2.30e-1,
+        2.00e-1,
+        1.80e-1,
+        1.67e-1,
+        1.58e-1,
+        1.50e-1,
+        1.42e-1,
+        1.35e-1,
+        1.27e-1
+    };
+
+    // Units are nanometers
+    const float AerosolWavelengths[] = {
+        300.0,
+        320.0,
+        340.0,
+        360.0,
+        380.0,
+        400.0,
+        450.0,
+        500.0,
+        550.0,
+        600.0,
+        650.0,
+        700.0,
+        800.0
+    };
 #endif
