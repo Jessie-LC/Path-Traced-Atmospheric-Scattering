@@ -355,7 +355,7 @@ void main() {
         float ozoneCoefficient = BetaO_Arbitrary(wavelength);
         float rayleighCoefficient = BetaR_Arbitrary(wavelength);
     #else
-        float mieCoefficient = (textureCoordinate.x > 0.5 ? BetaM_Measured(wavelength) : BetaM(wavelength)) / aerosolScatteringAlbedo;
+        float mieCoefficient = BetaM(wavelength) / aerosolScatteringAlbedo;
         #ifdef PREETHAM_OZONE
             float ozoneCoefficient = PreethamBetaO(wavelength);
         #else
