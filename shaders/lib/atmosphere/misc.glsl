@@ -122,7 +122,7 @@
         #if AEROSOL_DENSITY_PROFILE == 1
             float c = 1.0;
         #else
-            float c = (0.6544 * TURBIDITY - 0.6510) * 4e-18; // Added to enable 
+            float c = (0.6544 * TURBIDITY - 0.6510) * 4e-18; // Added to enable changing the turbidity, though this is not the right way to do it
         #endif
     
         return Remap(
@@ -139,9 +139,9 @@
             return BetaM_Measured(wavelength);
         #else
             #if AEROSOL_DENSITY_PROFILE == 1
-                return BetaM_Zombye(wavelength);
+                return BetaM_Zombye(wavelength) / aerosolScatteringAlbedo;
             #else
-                return BetaM_Preetham(wavelength);
+                return BetaM_Preetham(wavelength) / aerosolScatteringAlbedo;
             #endif
         #endif
     }

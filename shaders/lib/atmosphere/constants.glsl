@@ -9,7 +9,7 @@
 
     const vec2 scaleHeights = vec2(8.0, 1.4) * kilometer;
 
-    const float aerosol_g = 0.76;
+    const float aerosol_g = 0.76; // Average asymmetry parameter calculated from Mie Theory
     const float meanAerosolParticleDiameter = 0.8;
     const float meanCloudParticleDiameter = 5.0;
 
@@ -22,11 +22,11 @@
     const float atmosphereLowerLimit        = planetRadius;
     const float atmosphereLowerLimitSquared = atmosphereLowerLimit*atmosphereLowerLimit;
 
-    const float cleanAerosolAlbedo = 0.99;
-    const float dirtyAerosolAlbedo = 0.90;
+    const float cleanAerosolAlbedo = 0.99; // Average albedo calculated from Mie Theory, just water
+    const float dirtyAerosolAlbedo = 0.90; // Average albedo calculated from Mie Theory, includes contribution from carbon
     const float aerosolScatteringAlbedo = dirtyAerosolAlbedo; // Clean aerosols scatter around 99.9% of light, however dirty aerosols scatter around 90%
-    const float mistScatteringAlbedo = 0.99;
-    const float cloudScatteringAlbedo = 0.99;
+    const float mistScatteringAlbedo = 0.99; // Average albedo calculated from Mie Theory, same as clean albedo
+    const float cloudScatteringAlbedo = 0.99; // Average albedo calculated from Mie Theory
 
     const float cloudsAltitude = 600.0;
     const float cloudsThickness = cloudsAltitude * 0.3;

@@ -244,19 +244,19 @@ void main() {
     const int TILE_SIZE = 540;
     const int TILE_SAMPLES = 5;
 
-    int horWrap = int(ceil(viewWidth / float(TILE_SIZE)));
-    int vertWrap = int(ceil(viewHeight / float(TILE_SIZE)));
-    int tile = (frameCounter / TILE_SAMPLES) % (horWrap * vertWrap);
-    ivec2 tilePosition = TILE_SIZE * ivec2(tile % horWrap, tile / horWrap);
-    bool inTile = ((gl_FragCoord.x - tilePosition.x) - TILE_SIZE / 2 > -TILE_SIZE / 2  &&
-                   (gl_FragCoord.x - tilePosition.x) - TILE_SIZE / 2 <  TILE_SIZE / 2) &&
-                  ((gl_FragCoord.y - tilePosition.y) - TILE_SIZE / 2 > -TILE_SIZE / 2  &&
-                   (gl_FragCoord.y - tilePosition.y) - TILE_SIZE / 2 <  TILE_SIZE / 2);
-    if (!inTile) {
-        simulationOutput.rgb = texture(colortex0, textureCoordinate).rgb;
-        simulationOutput.a   = texture(colortex0, textureCoordinate).a;
-        return;
-    }
+    //int horWrap = int(ceil(viewWidth / float(TILE_SIZE)));
+    //int vertWrap = int(ceil(viewHeight / float(TILE_SIZE)));
+    //int tile = (frameCounter / TILE_SAMPLES) % (horWrap * vertWrap);
+    //ivec2 tilePosition = TILE_SIZE * ivec2(tile % horWrap, tile / horWrap);
+    //bool inTile = ((gl_FragCoord.x - tilePosition.x) - TILE_SIZE / 2 > -TILE_SIZE / 2  &&
+    //               (gl_FragCoord.x - tilePosition.x) - TILE_SIZE / 2 <  TILE_SIZE / 2) &&
+    //              ((gl_FragCoord.y - tilePosition.y) - TILE_SIZE / 2 > -TILE_SIZE / 2  &&
+    //               (gl_FragCoord.y - tilePosition.y) - TILE_SIZE / 2 <  TILE_SIZE / 2);
+    //if (!inTile) {
+    //    simulationOutput.rgb = texture(colortex0, textureCoordinate).rgb;
+    //    simulationOutput.a   = texture(colortex0, textureCoordinate).a;
+    //    return;
+    //}
 
 	uint seed = uint(gl_FragCoord.x * viewHeight + gl_FragCoord.y);
 	     seed = seed * 720720u + uint(samples);
@@ -355,7 +355,7 @@ void main() {
         float ozoneCoefficient = BetaO_Arbitrary(wavelength);
         float rayleighCoefficient = BetaR_Arbitrary(wavelength);
     #else
-        float mieCoefficient = BetaM(wavelength) / aerosolScatteringAlbedo;
+        float mieCoefficient = BetaM(wavelength);
         #ifdef PREETHAM_OZONE
             float ozoneCoefficient = PreethamBetaO(wavelength);
         #else

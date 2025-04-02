@@ -91,49 +91,6 @@ float EV100ToExposure(in float EV100) {
     return 1.0 / maxLuminance;
 }
 
-int GetMonth(int day) {
-    day = day % 365;
-    int month = 0;
-    if (day >= 1 && day <= 31) {
-        month = 1;
-    }
-    else if (day > 31 && day <= 59) {
-        month = 2;
-    }
-    else if (day > 59 && day <= 90) {
-        month = 3;
-    }
-    else if (day > 90 && day <= 120) {
-        month = 4;
-    }
-    else if (day > 120 && day <= 151) {
-        month = 5;
-    }
-    else if (day > 151 && day <= 181) {
-        month = 6;
-    }
-    else if (day > 181 && day <= 212) {
-        month = 7;
-    }
-    else if (day > 212 && day <= 243) {
-        month = 8;
-    }
-    else if (day > 243 && day <= 273) {
-        month = 9;
-    }
-    else if (day > 273 && day <= 304) {
-        month = 10;
-    }
-    else if (day > 304 && day <= 334) {
-        month = 11;
-    }
-    else if (day > 334 && day <= 365) {
-        month = 12;
-    }
-
-    return month;
-}
-
 void PrintDebugText(inout vec3 color) {
     int size = viewWidth < 1920 / 2 ? 2 : 3;
     beginText(ivec2(gl_FragCoord.xy / size), ivec2(0, viewHeight / size - (5 + size)));
@@ -245,6 +202,7 @@ void main() {
     #endif
     finalColor = LinearToSrgb(CameraTonemap(color, ISO));
     //finalColor = LinearToSrgb(1.0 - exp(-color));
+    //finalColor = LinearToSrgb(color);
 
     //float rayleigh = RayleighCrossSection[int(textureCoordinate.x * 441.0)] / 2.6325e-30;
 

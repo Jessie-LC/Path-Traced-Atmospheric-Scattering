@@ -189,7 +189,7 @@
             float pid;
             int groundPlane = RayPlaneIntersection(
                 position, rayDirection,
-                vec3(0.0, atmosphereLowerLimit, 0.0), vec3(0.0, -1.0, 0.0),
+                vec3(0.0, atmosphereLowerLimit, 0.0), vec3(0.0, 1.0, 0.0),
                 pid
             );
 

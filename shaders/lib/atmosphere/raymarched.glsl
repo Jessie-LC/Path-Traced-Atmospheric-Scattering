@@ -80,10 +80,10 @@
             float stepOpticalDepth = (baseAttenuationCoefficients.x * airMass.x) + (baseAttenuationCoefficients.y * airMass.y) + (baseAttenuationCoefficients.z * airMass.z);
 
             float stepTransmittance = saturate(exp(-stepOpticalDepth));
-            float visibleScattering = transmittance * saturate((stepTransmittance - 1.0) / -stepOpticalDepth);
+            float visibleScatteringFraction = transmittance * saturate((stepTransmittance - 1.0) / -stepOpticalDepth);
 
             float shadow = float(RSI(position, lightVector, planetRadius).x < 0.0);
-            scattering += (scatteringCoefficients.x * airMass.x * phaseR + scatteringCoefficients.y * airMass.y * phaseM) * visibleScattering * RaymarchAtmosphereTransmittance(lightVector, position, baseAttenuationCoefficients) * shadow;
+            scattering += (scatteringCoefficients.x * airMass.x * phaseR + scatteringCoefficients.y * airMass.y * phaseM) * visibleScatteringFraction * RaymarchAtmosphereTransmittance(lightVector, position, baseAttenuationCoefficients) * shadow;
             transmittance *= stepTransmittance;
 
             if(RSI(position, viewVector, atmosphereLowerLimit).x <= 0.0) {
